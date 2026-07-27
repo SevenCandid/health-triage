@@ -1,0 +1,2164 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Health Triage Assistant API",
+    "description": "### Offline-First Health Triage Assistant API\n\nProduction-grade RESTful API serving clinical triage evaluation, emergency dispatch, health profile management, and PWA outbox sync.\n\n**Key Architectural Highlights:**\n- **Dual Intelligence**: Deterministic rule engine + optional Gemini AI enhancement\n- **Multilingual**: BCP 47 language tagging (English `en`, Twi `tw`)\n- **Clean Architecture**: Isolated domain models, services, and interface adapters\n- **RFC 7807 Errors**: Structured problem details error payloads\n",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Service health check",
+        "description": "Returns service liveness status and database connectivity check.",
+        "operationId": "health_check_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new user account",
+        "description": "Creates a new user account with phone number and password. Returns a JWT access token on success.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Authenticate and receive JWT token",
+        "description": "Validates phone number and password credentials. Returns a JWT access token on successful authentication.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/start": {
+      "post": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Create a new assessment session",
+        "description": "Initializes a new interactive assessment session.",
+        "operationId": "start_assessment_api_v1_assessment_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentStartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/assessment/symptoms": {
+      "post": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Set primary symptom for assessment",
+        "description": "Accepts primary symptom selection and returns the first follow-up question.",
+        "operationId": "set_symptoms_api_v1_assessment_symptoms_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentSymptomsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentSymptomsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/answer": {
+      "post": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Submit question answer",
+        "description": "Records a question response and returns the next question or final result.",
+        "operationId": "submit_answer_api_v1_assessment_answer_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentAnswerResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/{session_id}": {
+      "get": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Retrieve assessment progress",
+        "description": "Gets the current status and answer count of an assessment session.",
+        "operationId": "get_assessment_progress_api_v1_assessment__session_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentProgressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/{session_id}/result": {
+      "get": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Retrieve assessment result",
+        "description": "Gets the evaluated severity, recommendations, and emergency status for a session.",
+        "operationId": "get_assessment_result_api_v1_assessment__session_id__result_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentResultResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/restart": {
+      "post": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Restart an assessment",
+        "description": "Marks the previous session as abandoned and creates a fresh session.",
+        "operationId": "restart_assessment_api_v1_assessment_restart_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentRestartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentRestartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/triage/evaluate": {
+      "post": {
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Evaluate symptoms against clinical decision tree",
+        "description": "Passes patient symptom inputs through the deterministic clinical rule engine. Returns urgency level (RED/ORANGE/YELLOW/GREEN), primary action, and timeframe. Authentication is optional \u2014 anonymous triage is permitted. See /docs/RuleEngineDesign.md for full decision tree specification.",
+        "operationId": "evaluate_triage_api_v1_triage_evaluate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriageEvaluateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageEvaluateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/triage/rules/latest": {
+      "get": {
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Fetch the latest active clinical rule tree",
+        "description": "Returns the full JSON decision tree structure for the currently active rule tree version. Used by the client-side offline rule engine to update its local cache. No authentication required \u2014 the rule tree is public data.",
+        "operationId": "get_latest_rule_tree_api_v1_triage_rules_latest_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RuleTreeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/triage/history": {
+      "get": {
+        "tags": [
+          "Triage"
+        ],
+        "summary": "Get authenticated user triage history",
+        "description": "Returns a paginated list of past triage sessions for the authenticated user.",
+        "operationId": "get_triage_history_api_v1_triage_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TriageHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/profile": {
+      "get": {
+        "tags": [
+          "User Profile"
+        ],
+        "summary": "Get current user health profile",
+        "description": "Returns the health profile for the currently authenticated user.",
+        "operationId": "get_my_profile_api_v1_users_me_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "User Profile"
+        ],
+        "summary": "Create or update current user health profile",
+        "description": "Creates or updates the health profile for the currently authenticated user.",
+        "operationId": "upsert_my_profile_api_v1_users_me_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealthProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/emergency-contacts": {
+      "get": {
+        "tags": [
+          "User Profile"
+        ],
+        "summary": "Get emergency contacts",
+        "description": "Returns all emergency contacts registered for the authenticated user.",
+        "operationId": "get_emergency_contacts_api_v1_users_me_emergency_contacts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EmergencyContactResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Get Emergency Contacts Api V1 Users Me Emergency Contacts Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "User Profile"
+        ],
+        "summary": "Add or update an emergency contact",
+        "description": "Creates or updates an emergency contact for the authenticated user.",
+        "operationId": "upsert_emergency_contact_api_v1_users_me_emergency_contacts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmergencyContactRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyContactResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/emergency/dispatch": {
+      "post": {
+        "tags": [
+          "Emergency"
+        ],
+        "summary": "Dispatch emergency alert with GPS coordinates",
+        "description": "Logs an emergency dispatch event with GPS location linked to a triage session. Returns a pre-formatted SMS payload string for the client to send. See /docs/EmergencySystem.md for full protocol specification.",
+        "operationId": "dispatch_emergency_api_v1_emergency_dispatch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmergencyDispatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyDispatchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sync/outbox": {
+      "post": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Bulk sync offline outbox sessions",
+        "description": "Idempotently ingests a batch of offline triage session records from the client-side IndexedDB outbox queue. Deduplicates by session UUID. See /docs/OfflineStrategy.md \u2014 Section 3 (Outbox Pattern).",
+        "operationId": "sync_outbox_api_v1_sync_outbox_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutboxSyncRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboxSyncResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/consultation/stream": {
+      "post": {
+        "tags": [
+          "Consultation & Voice"
+        ],
+        "summary": "Stream Gemini AI enriched consultation (SSE)",
+        "description": "TODO (Phase 2): Accepts a triage session ID and streams a Gemini AI empathetic contextual explanation via Server-Sent Events. See /docs/AIArchitecture.md for system prompt and guardrail specification.",
+        "operationId": "stream_consultation_api_v1_consultation_stream_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Stream Consultation Api V1 Consultation Stream Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/consultation/voice/transcribe": {
+      "post": {
+        "tags": [
+          "Consultation & Voice"
+        ],
+        "summary": "Transcribe voice audio to text (Whisper STT)",
+        "description": "TODO (Phase 2): Accepts an audio blob upload and returns a text transcript using Whisper fine-tuned model for Twi and English. See /docs/VoiceSystem.md for STT pipeline specification.",
+        "operationId": "transcribe_voice_api_v1_consultation_voice_transcribe_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Transcribe Voice Api V1 Consultation Voice Transcribe Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/dashboard": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Aggregate triage analytics metrics",
+        "description": "Returns anonymized aggregate triage statistics for admin dashboards. TODO (Phase 2 \u2014 FR-ANL-001): Implement live PostgreSQL aggregate queries. Currently returns a stub response. See /docs/FunctionalRequirements.md FR-ANL.",
+        "operationId": "get_dashboard_api_v1_analytics_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Dashboard Api V1 Analytics Dashboard Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AssessmentAnswerRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "node_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Node Id"
+          },
+          "answer_value": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Answer Value"
+          },
+          "answer_raw_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Raw Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "node_id",
+          "answer_value"
+        ],
+        "title": "AssessmentAnswerRequest",
+        "description": "Payload to record an answer to a question node."
+      },
+      "AssessmentAnswerResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "next_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextQuestionDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssessmentResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "is_completed"
+        ],
+        "title": "AssessmentAnswerResponse",
+        "description": "Response returned after answering a question."
+      },
+      "AssessmentProgressResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "symptom_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symptom Id"
+          },
+          "answers_count": {
+            "type": "integer",
+            "title": "Answers Count"
+          },
+          "conducted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Conducted At"
+          },
+          "created_offline": {
+            "type": "boolean",
+            "title": "Created Offline"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status",
+          "answers_count",
+          "conducted_at",
+          "created_offline"
+        ],
+        "title": "AssessmentProgressResponse",
+        "description": "Response representing current session progress."
+      },
+      "AssessmentRestartRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id"
+        ],
+        "title": "AssessmentRestartRequest",
+        "description": "Payload to restart an existing assessment session."
+      },
+      "AssessmentRestartResponse": {
+        "properties": {
+          "new_session_id": {
+            "type": "string",
+            "title": "New Session Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Assessment session restarted successfully."
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_session_id",
+          "status"
+        ],
+        "title": "AssessmentRestartResponse",
+        "description": "Response returned upon restarting an assessment session."
+      },
+      "AssessmentResultResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/UrgencyCode"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "is_emergency": {
+            "type": "boolean",
+            "title": "Is Emergency"
+          },
+          "conducted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Conducted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "severity",
+          "recommendations",
+          "explanation",
+          "is_emergency",
+          "conducted_at"
+        ],
+        "title": "AssessmentResultResponse",
+        "description": "Final assessment result model."
+      },
+      "AssessmentStartRequest": {
+        "properties": {
+          "language_code": {
+            "type": "string",
+            "pattern": "^(en|tw)$",
+            "title": "Language Code",
+            "default": "en"
+          },
+          "consultation_mode": {
+            "$ref": "#/components/schemas/ConsultationMode",
+            "default": "TEXT"
+          },
+          "created_offline": {
+            "type": "boolean",
+            "title": "Created Offline",
+            "default": false
+          }
+        },
+        "type": "object",
+        "title": "AssessmentStartRequest",
+        "description": "Payload to start a new assessment session."
+      },
+      "AssessmentStartResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SessionStatus"
+          },
+          "language_code": {
+            "type": "string",
+            "title": "Language Code"
+          },
+          "consultation_mode": {
+            "$ref": "#/components/schemas/ConsultationMode"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "status",
+          "language_code",
+          "consultation_mode",
+          "created_at"
+        ],
+        "title": "AssessmentStartResponse",
+        "description": "Response returned upon starting a session."
+      },
+      "AssessmentSymptomsRequest": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "symptom_slug": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Symptom Slug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "symptom_slug"
+        ],
+        "title": "AssessmentSymptomsRequest",
+        "description": "Payload to set the initial primary symptom for a session."
+      },
+      "AssessmentSymptomsResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "symptom_slug": {
+            "type": "string",
+            "title": "Symptom Slug"
+          },
+          "next_question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NextQuestionDTO"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "is_emergency": {
+            "type": "boolean",
+            "title": "Is Emergency",
+            "default": false
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UrgencyCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "symptom_slug"
+        ],
+        "title": "AssessmentSymptomsResponse",
+        "description": "Response returned after setting primary symptom."
+      },
+      "ConsultationMode": {
+        "type": "string",
+        "enum": [
+          "TEXT",
+          "VOICE",
+          "HYBRID"
+        ],
+        "title": "ConsultationMode",
+        "description": "How the user interacted with the triage flow."
+      },
+      "EmergencyContactRequest": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "contact_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Contact Name"
+          },
+          "phone_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 7,
+            "title": "Phone Number"
+          },
+          "relationship_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Relationship Type",
+            "default": "Other"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "contact_name",
+          "phone_number"
+        ],
+        "title": "EmergencyContactRequest",
+        "description": "Emergency contact create/update request."
+      },
+      "EmergencyContactResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "contact_name": {
+            "type": "string",
+            "title": "Contact Name"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "relationship_type": {
+            "type": "string",
+            "title": "Relationship Type"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "title": "Is Primary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "contact_name",
+          "phone_number",
+          "relationship_type",
+          "is_primary"
+        ],
+        "title": "EmergencyContactResponse",
+        "description": "Emergency contact read response."
+      },
+      "EmergencyDispatchRequest": {
+        "properties": {
+          "triage_session_id": {
+            "type": "string",
+            "title": "Triage Session Id"
+          },
+          "urgency_level": {
+            "type": "string",
+            "title": "Urgency Level",
+            "default": "RED"
+          },
+          "primary_symptom": {
+            "type": "string",
+            "title": "Primary Symptom"
+          },
+          "location": {
+            "$ref": "#/components/schemas/GpsLocation"
+          }
+        },
+        "type": "object",
+        "required": [
+          "triage_session_id",
+          "primary_symptom",
+          "location"
+        ],
+        "title": "EmergencyDispatchRequest",
+        "description": "Emergency alert dispatch request payload.\n\nSee /docs/EmergencySystem.md \u2014 Section 3.2"
+      },
+      "EmergencyDispatchResponse": {
+        "properties": {
+          "log_id": {
+            "type": "string",
+            "title": "Log Id"
+          },
+          "triage_session_id": {
+            "type": "string",
+            "title": "Triage Session Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "triggered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Triggered At"
+          },
+          "sms_payload": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sms Payload"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_id",
+          "triage_session_id",
+          "status",
+          "triggered_at"
+        ],
+        "title": "EmergencyDispatchResponse",
+        "description": "Emergency alert dispatch confirmation response."
+      },
+      "GpsLocation": {
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitude"
+          },
+          "accuracy_meters": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accuracy Meters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitude",
+          "longitude"
+        ],
+        "title": "GpsLocation",
+        "description": "GPS coordinate payload."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthCheckResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "ok"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database",
+            "default": "unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "service",
+          "version",
+          "environment"
+        ],
+        "title": "HealthCheckResponse",
+        "description": "Health check endpoint response schema."
+      },
+      "HealthProfileRequest": {
+        "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Full Name"
+          },
+          "age": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 0.0,
+            "title": "Age"
+          },
+          "biological_sex": {
+            "type": "string",
+            "pattern": "^(MALE|FEMALE|OTHER)$",
+            "title": "Biological Sex"
+          },
+          "blood_group": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(A|B|AB|O)[+-]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blood Group",
+            "description": "ABO blood group with Rh factor (e.g. A+, O-)."
+          },
+          "chronic_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chronic Conditions"
+          },
+          "known_allergies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Known Allergies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "full_name",
+          "age",
+          "biological_sex"
+        ],
+        "title": "HealthProfileRequest",
+        "description": "Health profile create/update request payload."
+      },
+      "HealthProfileResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "age": {
+            "type": "integer",
+            "title": "Age"
+          },
+          "biological_sex": {
+            "type": "string",
+            "title": "Biological Sex"
+          },
+          "blood_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blood Group"
+          },
+          "chronic_conditions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chronic Conditions"
+          },
+          "known_allergies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Known Allergies"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "emergency_contacts": {
+            "items": {
+              "$ref": "#/components/schemas/EmergencyContactResponse"
+            },
+            "type": "array",
+            "title": "Emergency Contacts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "full_name",
+          "age",
+          "biological_sex",
+          "blood_group",
+          "chronic_conditions",
+          "known_allergies",
+          "updated_at"
+        ],
+        "title": "HealthProfileResponse",
+        "description": "Health profile read response payload."
+      },
+      "LocalizedText": {
+        "properties": {
+          "en": {
+            "type": "string",
+            "title": "En"
+          },
+          "tw": {
+            "type": "string",
+            "title": "Tw"
+          }
+        },
+        "type": "object",
+        "required": [
+          "en",
+          "tw"
+        ],
+        "title": "LocalizedText",
+        "description": "Bilingual text field carrying English and Twi variants."
+      },
+      "LoginRequest": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 7,
+            "title": "Phone Number"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number",
+          "password"
+        ],
+        "title": "LoginRequest",
+        "description": "User login request payload."
+      },
+      "NextQuestionDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "question_text_en": {
+            "type": "string",
+            "title": "Question Text En"
+          },
+          "question_text_tw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Text Tw"
+          },
+          "question_type": {
+            "type": "string",
+            "title": "Question Type"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOptionDTO"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "node_id",
+          "question_text_en",
+          "question_type"
+        ],
+        "title": "NextQuestionDTO",
+        "description": "DTO for the next question to be answered by the patient."
+      },
+      "OutboxSessionItem": {
+        "properties": {
+          "local_id": {
+            "type": "string",
+            "title": "Local Id",
+            "description": "Client-side UUID for idempotency."
+          },
+          "urgency_level": {
+            "type": "string",
+            "pattern": "^(RED|ORANGE|YELLOW|GREEN)$",
+            "title": "Urgency Level"
+          },
+          "primary_symptom": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Primary Symptom"
+          },
+          "symptom_details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Symptom Details"
+          },
+          "language_code": {
+            "type": "string",
+            "pattern": "^(en|tw)$",
+            "title": "Language Code",
+            "default": "en"
+          },
+          "conducted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Conducted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_id",
+          "urgency_level",
+          "primary_symptom",
+          "conducted_at"
+        ],
+        "title": "OutboxSessionItem",
+        "description": "Individual offline triage session item from the client outbox queue."
+      },
+      "OutboxSyncRequest": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id",
+            "description": "Unique ID for this sync batch operation."
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/OutboxSessionItem"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "sessions"
+        ],
+        "title": "OutboxSyncRequest",
+        "description": "Batch outbox sync request payload from client Service Worker."
+      },
+      "OutboxSyncResponse": {
+        "properties": {
+          "processed_count": {
+            "type": "integer",
+            "title": "Processed Count"
+          },
+          "synced_ids": {
+            "items": {
+              "$ref": "#/components/schemas/SyncedIdPair"
+            },
+            "type": "array",
+            "title": "Synced Ids"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processed_count",
+          "synced_ids"
+        ],
+        "title": "OutboxSyncResponse",
+        "description": "Batch outbox sync response payload."
+      },
+      "QuestionOptionDTO": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "option_value": {
+            "type": "string",
+            "title": "Option Value"
+          },
+          "label_en": {
+            "type": "string",
+            "title": "Label En"
+          },
+          "label_tw": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label Tw"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "option_value",
+          "label_en"
+        ],
+        "title": "QuestionOptionDTO",
+        "description": "DTO for question option representation."
+      },
+      "RegisterRequest": {
+        "properties": {
+          "phone_number": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 7,
+            "title": "Phone Number",
+            "description": "Phone number in E.164 format (e.g. +233241234567)",
+            "examples": [
+              "+233241234567"
+            ]
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 72,
+            "minLength": 8,
+            "title": "Password"
+          },
+          "preferred_language": {
+            "type": "string",
+            "pattern": "^(en|tw)$",
+            "title": "Preferred Language",
+            "default": "en"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phone_number",
+          "password"
+        ],
+        "title": "RegisterRequest",
+        "description": "User registration request payload."
+      },
+      "RuleTreeResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "tree_structure": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Tree Structure"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "description",
+          "tree_structure",
+          "is_active",
+          "published_at"
+        ],
+        "title": "RuleTreeResponse",
+        "description": "Clinical rule tree response (full tree structure)."
+      },
+      "SessionStatus": {
+        "type": "string",
+        "enum": [
+          "IN_PROGRESS",
+          "COMPLETED",
+          "ABANDONED",
+          "SYNCED"
+        ],
+        "title": "SessionStatus",
+        "description": "Lifecycle status of an assessment session."
+      },
+      "SyncedIdPair": {
+        "properties": {
+          "local_id": {
+            "type": "string",
+            "title": "Local Id"
+          },
+          "server_id": {
+            "type": "string",
+            "title": "Server Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "local_id",
+          "server_id"
+        ],
+        "title": "SyncedIdPair",
+        "description": "Maps a client local_id to the newly assigned server_id."
+      },
+      "TokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "expires_in_minutes": {
+            "type": "integer",
+            "title": "Expires In Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "expires_in_minutes"
+        ],
+        "title": "TokenResponse",
+        "description": "JWT access token response payload."
+      },
+      "TriageEvaluateRequest": {
+        "properties": {
+          "primary_symptom": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 2,
+            "title": "Primary Symptom",
+            "description": "Primary presenting symptom keyword.",
+            "examples": [
+              "fever",
+              "chest_pain",
+              "severe_bleeding"
+            ]
+          },
+          "language_code": {
+            "type": "string",
+            "pattern": "^(en|tw)$",
+            "title": "Language Code",
+            "default": "en"
+          },
+          "patient_age": {
+            "type": "integer",
+            "maximum": 120.0,
+            "minimum": 0.0,
+            "title": "Patient Age",
+            "description": "Patient age in years."
+          },
+          "patient_sex": {
+            "type": "string",
+            "pattern": "^(MALE|FEMALE|OTHER)$",
+            "title": "Patient Sex"
+          },
+          "answers": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Answers",
+            "description": "Node ID to selected answer mapping from decision tree traversal."
+          },
+          "created_offline": {
+            "type": "boolean",
+            "title": "Created Offline",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "primary_symptom",
+          "patient_age",
+          "patient_sex"
+        ],
+        "title": "TriageEvaluateRequest",
+        "description": "Triage symptom evaluation request payload."
+      },
+      "TriageEvaluateResponse": {
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "title": "Session Id"
+          },
+          "urgency_level": {
+            "$ref": "#/components/schemas/UrgencyLevel"
+          },
+          "urgency_display": {
+            "type": "string",
+            "title": "Urgency Display"
+          },
+          "primary_action": {
+            "$ref": "#/components/schemas/LocalizedText"
+          },
+          "timeframe_hours": {
+            "type": "integer",
+            "title": "Timeframe Hours"
+          },
+          "first_aid_protocol_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Aid Protocol Id"
+          },
+          "evaluated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Evaluated At"
+          },
+          "rule_tree_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Tree Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "urgency_level",
+          "urgency_display",
+          "primary_action",
+          "timeframe_hours",
+          "evaluated_at"
+        ],
+        "title": "TriageEvaluateResponse",
+        "description": "Triage evaluation response payload."
+      },
+      "TriageHistoryResponse": {
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/TriageSessionSummary"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessions",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "TriageHistoryResponse",
+        "description": "Paginated triage history list response."
+      },
+      "TriageSessionSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "urgency_level": {
+            "type": "string",
+            "title": "Urgency Level"
+          },
+          "primary_symptom": {
+            "type": "string",
+            "title": "Primary Symptom"
+          },
+          "language_code": {
+            "type": "string",
+            "title": "Language Code"
+          },
+          "created_offline": {
+            "type": "boolean",
+            "title": "Created Offline"
+          },
+          "conducted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Conducted At"
+          },
+          "synced_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Synced At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "urgency_level",
+          "primary_symptom",
+          "language_code",
+          "created_offline",
+          "conducted_at",
+          "synced_at"
+        ],
+        "title": "TriageSessionSummary",
+        "description": "Lightweight triage session summary for history list views."
+      },
+      "UrgencyCode": {
+        "type": "string",
+        "enum": [
+          "RED",
+          "ORANGE",
+          "YELLOW",
+          "GREEN"
+        ],
+        "title": "UrgencyCode",
+        "description": "The four canonical clinical urgency codes.\n\nThese must mirror app/domain/value_objects/urgency_level.py exactly."
+      },
+      "UrgencyLevel": {
+        "type": "string",
+        "enum": [
+          "RED",
+          "ORANGE",
+          "YELLOW",
+          "GREEN"
+        ],
+        "title": "UrgencyLevel",
+        "description": "Four-tier clinical urgency classification.\n\n- RED: Life-threatening emergency. Immediate intervention required.\n- ORANGE: Very urgent. Hospital evaluation within 60 minutes.\n- YELLOW: Urgent. Clinic visit within 24 hours.\n- GREEN: Non-urgent. Self-care guidance; routine appointment."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Liveness and database connectivity probes for health monitoring."
+    },
+    {
+      "name": "Authentication",
+      "description": "User registration, login, and JWT access token issuance endpoints."
+    },
+    {
+      "name": "Assessment API",
+      "description": "Interactive symptom evaluation session workflow endpoints."
+    },
+    {
+      "name": "Triage",
+      "description": "Clinical decision tree evaluation and rule tree configuration endpoints."
+    },
+    {
+      "name": "User Profile",
+      "description": "Health profile and emergency contact management endpoints."
+    },
+    {
+      "name": "Emergency",
+      "description": "GPS-tagged emergency dispatch alert triggering and SMS payload generation."
+    },
+    {
+      "name": "Sync",
+      "description": "Offline outbox batch synchronization endpoints for PWA clients."
+    },
+    {
+      "name": "Consultation & Voice",
+      "description": "Gemini AI explanation streaming and speech-to-text voice consultation endpoints."
+    },
+    {
+      "name": "Analytics",
+      "description": "Anonymized aggregate triage statistics and clinical metrics dashboard."
+    }
+  ]
+}
