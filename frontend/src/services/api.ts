@@ -67,11 +67,12 @@ export const assessmentApi = {
       created_offline: false,
     }),
 
-  submitSymptoms: (sessionId: string, symptoms: string[]) => {
+  submitSymptoms: (sessionId: string, symptoms: string[], userText?: string) => {
     const slug = symptoms[0] ? symptoms[0].toLowerCase().replace(/\s+/g, '-') : 'unknown';
     return apiClient.post<SymptomsSubmitResponse>('/assessment/symptoms', {
       session_id: sessionId,
       symptom_slug: slug,
+      user_text: userText || symptoms[0],
     });
   },
 
@@ -81,6 +82,15 @@ export const assessmentApi = {
       node_id: questionId,
       answer_value: Array.isArray(answer) ? answer.join(',') : answer,
     }),
+
+  getConversationTranscript: (sessionId: string) =>
+    apiClient.get<{
+      session_id: string
+      status: string
+      symptom_name: string | null
+      symptom_slug: string | null
+      messages: { role: 'USER' | 'SYSTEM'; content: string }[]
+    }>(`/assessment/${sessionId}/conversation`),
 
   getSession: (sessionId: string) =>
     apiClient.get<AssessmentSession>(`/assessment/${sessionId}`),

@@ -22,12 +22,14 @@ class AssessmentStartResponse(BaseModel):
     language_code: str
     consultation_mode: ConsultationMode
     created_at: datetime
+    pending_symptom: Optional[str] = None
 
 
 class AssessmentSymptomsRequest(BaseModel):
     """Payload to set the initial primary symptom for a session."""
     session_id: str
     symptom_slug: str = Field(..., min_length=1, max_length=80)
+    user_text: Optional[str] = None
 
 
 class QuestionOptionDTO(BaseModel):

@@ -37,6 +37,18 @@ from app.services.triage_service import TriageService
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/assessment", tags=["Assessment API"])
 
+def get_conversational_prefix(answer_count: int) -> str:
+    prefixes = [
+        "I understand. Let's look into this.",
+        "Thank you, that's helpful.",
+        "I'd like to understand this a little better.",
+        "Got it. Just a few more questions.",
+        "Thanks for sharing that.",
+    ]
+    if answer_count == 0:
+        return ""
+    idx = (answer_count - 1) % len(prefixes)
+    return prefixes[idx] + " "
 
 @router.post(
     "/start",
@@ -51,7 +63,7 @@ async def start_assessment(
     user_id: Optional[str] = Depends(get_optional_user_id),
 ) -> AssessmentStartResponse:
     """Creates a new assessment session record."""
-    sess = await service.start_session(
+    sess, pending_symptom = await service.start_session(
         language_code=payload.language_code,
         consultation_mode=payload.consultation_mode,
         created_offline=payload.created_offline,
@@ -63,8 +75,11 @@ async def start_assessment(
         language_code=sess.language_code,
         consultation_mode=sess.consultation_mode,
         created_at=sess.conducted_at,
+        pending_symptom=pending_symptom,
     )
 
+
+from app.services.symptom_understanding.symptom_normalizer import SymptomNormalizer
 
 @router.post(
     "/symptoms",
@@ -78,9 +93,12 @@ async def set_symptoms(
 ) -> AssessmentSymptomsResponse:
     """Associates a primary symptom with the assessment session and evaluates initial question or red flag."""
     try:
+        normalizer = SymptomNormalizer()
+        input_text = payload.user_text or payload.symptom_slug
+        normalized_slug = normalizer.normalize(input_text) or payload.symptom_slug
         sess, sym, eval_result = await service.set_symptoms(
             session_id=payload.session_id,
-            symptom_slug=payload.symptom_slug,
+            symptom_slug=normalized_slug,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
@@ -88,10 +106,12 @@ async def set_symptoms(
     next_q_dto = None
     if eval_result.next_question:
         nq = eval_result.next_question
+        ans_count = len(sess.raw_answers_snapshot) if sess.raw_answers_snapshot else 0
+        prefix = get_conversational_prefix(ans_count)
         next_q_dto = NextQuestionDTO(
             id=nq["id"],
             node_id=nq["node_id"],
-            question_text_en=nq["question_text_en"],
+            question_text_en=prefix + nq["question_text_en"],
             question_text_tw=nq.get("question_text_tw"),
             question_type=nq["question_type"],
             options=[QuestionOptionDTO(**opt) for opt in nq.get("options", [])],
@@ -130,10 +150,12 @@ async def submit_answer(
     next_q_dto = None
     if eval_result.next_question:
         nq = eval_result.next_question
+        ans_count = len(sess.raw_answers_snapshot) if sess.raw_answers_snapshot else 0
+        prefix = get_conversational_prefix(ans_count)
         next_q_dto = NextQuestionDTO(
             id=nq["id"],
             node_id=nq["node_id"],
-            question_text_en=nq["question_text_en"],
+            question_text_en=prefix + nq["question_text_en"],
             question_text_tw=nq.get("question_text_tw"),
             question_type=nq["question_type"],
             options=[QuestionOptionDTO(**opt) for opt in nq.get("options", [])],
@@ -274,3 +296,19 @@ async def restart_assessment(
         new_session_id=new_sess.id,
         status=new_sess.status,
     )
+
+
+@router.get(
+    "/{session_id}/conversation",
+    summary="Get conversation transcript",
+)
+async def get_conversation_transcript(
+    session_id: str,
+    service: TriageService = Depends(get_triage_service),
+):
+    """Retrieves full text transcript of the conversation session."""
+    try:
+        return await service.get_conversation_transcript(session_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+

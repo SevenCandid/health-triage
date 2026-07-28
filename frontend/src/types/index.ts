@@ -176,6 +176,7 @@ export interface StartAssessmentResponse {
   language_code: string
   consultation_mode: string
   created_at: string
+  pending_symptom?: string | null
 }
 
 export interface SymptomsSubmitResponse {

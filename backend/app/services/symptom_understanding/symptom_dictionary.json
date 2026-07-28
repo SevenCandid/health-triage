@@ -1,0 +1,124 @@
+{
+  "headache": [
+    "head hurts",
+    "head is paining me",
+    "head is killing me",
+    "head feels heavy",
+    "got a headache",
+    "heavy head",
+    "throbbing head",
+    "pain in my head",
+    "headache"
+  ],
+  "fever": [
+    "feeling hot",
+    "body feels warm",
+    "running a temperature",
+    "chills and heat",
+    "feverish",
+    "body is hot",
+    "high temperature",
+    "running a fever",
+    "fever"
+  ],
+  "cough": [
+    "can't stop coughing",
+    "coughing a lot",
+    "chest tickle",
+    "dry cough",
+    "coughing up phlegm",
+    "coughing all night",
+    "have a cough",
+    "coughing"
+  ],
+  "chest-pain": [
+    "chest feels tight",
+    "tightness in chest",
+    "pain in my chest",
+    "chest hurts",
+    "sore chest",
+    "chest pain",
+    "tightness",
+    "heavy chest"
+  ],
+  "shortness-of-breath": [
+    "can't breathe well",
+    "hard to breathe",
+    "short of breath",
+    "tight chest breathing",
+    "breathless",
+    "difficulty breathing",
+    "choking feel",
+    "gasping for air"
+  ],
+  "abdominal-pain": [
+    "stomach hurts",
+    "pain in my stomach",
+    "abdominal pain",
+    "belly ache",
+    "stomach pain",
+    "tummy ache",
+    "pain in my belly",
+    "stomach cramping",
+    "stomach cramps"
+  ],
+  "nausea-vomiting": [
+    "throwing up",
+    "feel like vomiting",
+    "feeling nauseous",
+    "vomiting",
+    "nausea",
+    "sick to my stomach",
+    "want to throw up",
+    "puking"
+  ],
+  "diarrhea": [
+    "running stomach",
+    "watery toilet",
+    "frequent toilet",
+    "diarrhea",
+    "loose motion",
+    "watery stool",
+    "running bowel"
+  ],
+  "sore-throat": [
+    "throat hurts",
+    "throat is painful",
+    "painful swallowing",
+    "sore throat",
+    "scratchy throat",
+    "throat feels raw"
+  ],
+  "dizziness": [
+    "feeling dizzy",
+    "dizziness",
+    "spinning head",
+    "giddiness",
+    "lightheaded",
+    "head is spinning"
+  ],
+  "rash": [
+    "skin rash",
+    "itchy skin",
+    "spots on my skin",
+    "rash",
+    "breaking out",
+    "skin irritation"
+  ],
+  "back-pain": [
+    "back hurts",
+    "back pain",
+    "pain in my back",
+    "lower back ache",
+    "backache"
+  ],
+  "fatigue": [
+    "feeling weak",
+    "too tired",
+    "no energy",
+    "fatigue",
+    "extremely tired",
+    "body weakness",
+    "worn out"
+  ]
+}

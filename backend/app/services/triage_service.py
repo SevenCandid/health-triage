@@ -8,7 +8,7 @@ Architecture Note:
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,9 +41,33 @@ class TriageService:
         consultation_mode: ConsultationMode = ConsultationMode.TEXT,
         created_offline: bool = False,
         user_id: Optional[str] = None
-    ) -> AssessmentSessionModel:
+    ) -> tuple[AssessmentSessionModel, Optional[str]]:
         """Creates and persists a new assessment session."""
         logger.info(f"Starting new assessment session. Mode: {consultation_mode}, Lang: {language_code}")
+        
+        pending_symptom = None
+        if user_id:
+            one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
+            recent_sess_res = await self.session.execute(
+                select(AssessmentSessionModel)
+                .where(
+                    AssessmentSessionModel.user_id == user_id,
+                    AssessmentSessionModel.conducted_at >= one_day_ago,
+                    AssessmentSessionModel.symptom_id.isnot(None),
+                    AssessmentSessionModel.is_deleted == False
+                )
+                .order_by(AssessmentSessionModel.conducted_at.desc())
+                .limit(1)
+            )
+            recent_sess = recent_sess_res.scalar_one_or_none()
+            if recent_sess and recent_sess.symptom_id:
+                sym_res = await self.session.execute(
+                    select(SymptomModel).where(SymptomModel.id == recent_sess.symptom_id)
+                )
+                sym = sym_res.scalar_one_or_none()
+                if sym:
+                    pending_symptom = sym.name_en
+
         sess = AssessmentSessionModel(
             id=str(uuid.uuid4()),
             user_id=user_id,
@@ -57,7 +81,7 @@ class TriageService:
         self.session.add(sess)
         await self.session.flush()
         await self.session.refresh(sess)
-        return sess
+        return sess, pending_symptom
 
     async def set_symptoms(
         self,
@@ -318,3 +342,77 @@ class TriageService:
             .limit(1)
         )
         return result.scalar_one_or_none()
+
+    async def get_conversation_transcript(self, session_id: str) -> dict:
+        sess_res = await self.session.execute(
+            select(AssessmentSessionModel).where(
+                AssessmentSessionModel.id == session_id,
+                AssessmentSessionModel.is_deleted == False
+            )
+        )
+        sess = sess_res.scalar_one_or_none()
+        if not sess:
+            raise ValueError(f"Session '{session_id}' not found.")
+
+        symptom_name = None
+        symptom_slug = None
+        if sess.symptom_id:
+            sym_res = await self.session.execute(
+                select(SymptomModel).where(SymptomModel.id == sess.symptom_id)
+            )
+            sym = sym_res.scalar_one_or_none()
+            if sym:
+                symptom_name = sym.name_en
+                symptom_slug = sym.slug
+
+        resp_res = await self.session.execute(
+            select(AssessmentResponseModel)
+            .where(AssessmentResponseModel.session_id == session_id)
+            .order_by(AssessmentResponseModel.answered_at)
+        )
+        responses = list(resp_res.scalars().all())
+
+        messages = []
+        messages.append({
+            "role": "SYSTEM",
+            "content": "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?"
+        })
+
+        if symptom_name:
+            messages.append({
+                "role": "USER",
+                "content": symptom_name
+            })
+
+            for resp in responses:
+                q_res = await self.session.execute(
+                    select(QuestionModel)
+                    .options(selectinload(QuestionModel.options))
+                    .where(
+                        QuestionModel.symptom_id == sess.symptom_id,
+                        QuestionModel.node_id == resp.node_id
+                    )
+                )
+                q = q_res.scalar_one_or_none()
+                if q:
+                    messages.append({
+                        "role": "SYSTEM",
+                        "content": q.question_text_en
+                    })
+                    display_ans = resp.answer_raw_text or resp.answer_value
+                    if q.options:
+                        selected_opts = [o.label_en for o in q.options if o.option_value == resp.answer_value]
+                        if selected_opts:
+                            display_ans = selected_opts[0]
+                    messages.append({
+                        "role": "USER",
+                        "content": display_ans
+                    })
+
+        return {
+            "session_id": sess.id,
+            "status": sess.status.value if sess.status else None,
+            "symptom_name": symptom_name,
+            "symptom_slug": symptom_slug,
+            "messages": messages
+        }

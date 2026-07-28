@@ -183,6 +183,19 @@ export default function AssessmentResultPage() {
   const cfg = RISK[severity] ?? RISK['GREEN']
   const isEmergency = result.is_emergency || severity === 'RED' || severity === 'EMERGENCY'
 
+  const currentSymptoms = useAssessmentStore((s) => s.currentSymptoms)
+  const symptomName = currentSymptoms[0] || 'General Health Concern'
+  const symptomSlug = symptomName.toLowerCase().replace(/\s+/g, '-')
+
+  const SYMPTOM_INFO: Record<string, string> = {
+    'headache': 'Headaches can range from mild tension to severe migraines. Common triggers include stress, dehydration, fatigue, or eye strain.',
+    'fever': 'A fever is a temporary increase in body temperature, often due to an illness or infection. It is a sign that your body is fighting off something.',
+    'cough': 'Coughing is a natural reflex to protect your airways from irritants, infections, or fluids.',
+    'chest-pain': 'Chest pain can have various causes, ranging from muscle strain or acid reflux to serious heart conditions.',
+    'shortness-of-breath': 'Difficulty breathing can be related to physical exertion, anxiety, asthma, or respiratory infections.',
+  }
+  const generalInfo = SYMPTOM_INFO[symptomSlug] || 'If you are experiencing new or changing symptoms, it is helpful to monitor their severity and consult a professional if they persist.'
+
   // Parse explanation into bullet-point reasons
   const reasons = result.explanation
     ? result.explanation
@@ -198,15 +211,26 @@ export default function AssessmentResultPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-3">
+    <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-4">
+
+      {/* 🩺 Reusable Health Guidance Disclaimer */}
+      <Section delay={0}>
+        <Card className="border-blue-500/20 bg-blue-500/5 p-4 flex gap-3 items-start text-left rounded-2xl">
+          <span className="text-xl">🩺</span>
+          <div>
+            <p className="text-xs font-bold text-foreground mb-1">Health Guidance Disclaimer</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              This assessment provides health guidance based on the information you share. It is not a medical diagnosis and does not replace care from a qualified healthcare professional.
+            </p>
+          </div>
+        </Card>
+      </Section>
 
       {/* ── Hero Risk Card ─────────────────────────────────────── */}
-      <Section delay={0}>
+      <Section delay={0.05}>
         <div className={`relative rounded-2xl overflow-hidden border-2 ${cfg.ring} shadow-lg`}>
-
           {/* Top gradient banner */}
           <div className={`bg-gradient-to-br ${cfg.gradient} px-5 py-6 flex flex-col items-center text-center text-white`}>
-
             {/* Pulsing ring + emoji */}
             <div className="relative mb-3">
               <div className={`absolute inset-0 rounded-full ${cfg.pulseColor} opacity-30 animate-ping`} style={{ animationDuration: '2s' }} />
@@ -216,7 +240,7 @@ export default function AssessmentResultPage() {
             </div>
 
             <p className="text-xs font-semibold uppercase tracking-widest opacity-80 mb-1">
-              Assessment Complete
+              Assessment Summary
             </p>
             <h1 className="text-2xl font-extrabold tracking-tight">{cfg.label}</h1>
             <p className="text-sm opacity-85 mt-1 font-medium">{cfg.sublabel}</p>
@@ -248,41 +272,35 @@ export default function AssessmentResultPage() {
         </div>
       </Section>
 
-      {/* ── Recommendations ───────────────────────────────────── */}
-      {result.recommendations?.length > 0 && (
-        <Section delay={0.1}>
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-base">💡</span>
-              <h2 className="text-sm font-bold text-foreground">Recommendation</h2>
-            </div>
-            <div className="divide-y divide-border/60">
-              {result.recommendations.map((rec: string, i: number) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.15 + i * 0.07 }}
-                  className="flex items-start gap-3 px-4 py-3"
-                >
-                  <span className="mt-0.5 text-base flex-shrink-0">
-                    {i === 0 ? '✅' : i === 1 ? '💧' : i === 2 ? '🛏️' : i === 3 ? '📅' : '🩺'}
-                  </span>
-                  <p className="text-sm text-foreground leading-snug">{rec}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </Section>
-      )}
+      {/* ── 1. What We Understood ───────────────────────────────── */}
+      <Section delay={0.1}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1">
+          <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+            💬 1. What We Understood
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Reported Symptom: <span className="font-semibold text-foreground">{symptomName}</span>
+          </p>
+        </div>
+      </Section>
 
-      {/* ── Why? (Clinical Explanation) ──────────────────────── */}
+      {/* ── 2. General Information ──────────────────────────────── */}
+      <Section delay={0.15}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1">
+          <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+            📖 2. General Information
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">{generalInfo}</p>
+        </div>
+      </Section>
+
+      {/* ── 3. Why this recommendation was chosen ───────────────── */}
       {reasons.length > 0 && (
         <Section delay={0.2}>
           <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-base">🔬</span>
-              <h2 className="text-sm font-bold text-foreground">Why?</h2>
+              <span className="text-sm">🔬</span>
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">3. Why this recommendation was chosen</h2>
             </div>
             <div className="px-4 py-3 space-y-2">
               {reasons.map((reason: string, i: number) => (
@@ -302,23 +320,62 @@ export default function AssessmentResultPage() {
         </Section>
       )}
 
-      {/* ── Raw explanation fallback (if no parseable reasons) ── */}
       {reasons.length === 0 && result.explanation && (
         <Section delay={0.2}>
           <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-base">🔬</span>
-              <h2 className="text-sm font-bold text-foreground">Clinical Notes</h2>
+              <span className="text-sm">🔬</span>
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">3. Why this recommendation was chosen</h2>
             </div>
             <p className="px-4 py-3 text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
           </div>
         </Section>
       )}
 
+      {/* ── 4. General self-care suggestions ───────────────────── */}
+      {result.recommendations?.length > 0 && (
+        <Section delay={0.25}>
+          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+              <span className="text-sm">🩹</span>
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">4. General Self-Care Suggestions</h2>
+            </div>
+            <div className="divide-y divide-border/60">
+              {result.recommendations.map((rec: string, i: number) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 + i * 0.07 }}
+                  className="flex items-start gap-3 px-4 py-3"
+                >
+                  <span className="mt-0.5 text-sm flex-shrink-0">
+                    {i === 0 ? '✅' : i === 1 ? '💧' : i === 2 ? '🛏️' : i === 3 ? '📅' : '🩺'}
+                  </span>
+                  <p className="text-xs text-foreground leading-snug">{rec}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
+
+      {/* ── 5. Warning signs to watch for ──────────────────────── */}
+      <Section delay={0.3}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
+          <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+            ⚠️ 5. Warning Signs to Watch For
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Please seek immediate medical attention if you experience difficulty breathing, sudden severe pain, chest tightness, high fever resistant to medication, sudden confusion, or loss of consciousness.
+          </p>
+        </div>
+      </Section>
+
       {/* Guest Signup Promotion */}
       {userRole === 'GUEST' && (
-        <Section delay={0.25}>
-          <Card className="border-primary/30 bg-primary/5 text-center p-5 space-y-3">
+        <Section delay={0.32}>
+          <Card className="border-primary/30 bg-primary/5 text-center p-5 space-y-3 rounded-2xl">
             <p className="text-2xl">✨</p>
             <p className="text-xs font-bold text-foreground leading-relaxed">
               Create a free account to save this assessment and track your health over time.
@@ -335,12 +392,12 @@ export default function AssessmentResultPage() {
         </Section>
       )}
 
-      {/* ── Next Steps ───────────────────────────────────────── */}
-      <Section delay={0.3}>
+      {/* ── 6. Recommended next steps ──────────────────────────── */}
+      <Section delay={0.35}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-            <span className="text-base">🗺️</span>
-            <h2 className="text-sm font-bold text-foreground">Next Steps</h2>
+            <span className="text-sm">🗺️</span>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">6. Recommended Next Steps</h2>
           </div>
           <div className="p-3 space-y-2">
 
@@ -351,7 +408,7 @@ export default function AssessmentResultPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.35 }}
                 onClick={() => navigate('/emergency')}
-                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-sm rounded-xl py-3.5 transition-all shadow-md shadow-red-500/30"
+                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl py-3 transition-all shadow-md shadow-red-500/30"
               >
                 <span>🚨</span> Call Emergency Services
               </motion.button>
@@ -360,7 +417,7 @@ export default function AssessmentResultPage() {
             {/* Find Hospital */}
             <button
               onClick={() => window.open('https://www.google.com/maps/search/hospital+near+me', '_blank')}
-              className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-sm rounded-xl py-3 transition-all"
+              className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all"
             >
               <span>🏥</span> Find Nearby Hospital
             </button>
@@ -369,7 +426,7 @@ export default function AssessmentResultPage() {
             {!isEmergency && (
               <button
                 onClick={() => navigate('/emergency')}
-                className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-sm rounded-xl py-3 transition-all"
+                className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all"
               >
                 <span>📞</span> Call My Doctor / Contact
               </button>
@@ -380,26 +437,33 @@ export default function AssessmentResultPage() {
             {/* Start New */}
             <button
               onClick={handleStartNew}
-              className={`w-full flex items-center justify-center gap-2 font-semibold text-sm rounded-xl py-3 transition-all bg-primary hover:bg-primary/90 text-primary-foreground`}
+              className={`w-full flex items-center justify-center gap-2 font-semibold text-xs rounded-xl py-2.5 transition-all bg-primary hover:bg-primary/90 text-primary-foreground`}
             >
-              <span>🔄</span> Start New Assessment
-            </button>
-
-            {/* Dashboard */}
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full flex items-center justify-center gap-2 text-muted-foreground text-xs py-2 hover:text-foreground transition-colors"
-            >
-              ← Back to Dashboard
+              <span>🔄</span> Start New Conversation
             </button>
           </div>
         </div>
       </Section>
 
-      {/* ── Session ID footer ─────────────────────────────────── */}
+      {/* ── 7. Continue Conversation ───────────────────────────── */}
       <Section delay={0.4}>
-        <p className="text-center text-[10px] text-muted-foreground/50 select-all">
-          Session ID: {result.session_id}
+        <Card className="border-border bg-muted/20 p-5 text-center space-y-3 rounded-2xl">
+          <p className="text-xs font-semibold text-foreground">Would you like to continue discussing your health?</p>
+          <div className="flex gap-2 justify-center">
+            <Button onClick={() => navigate(`/assessment?resume=true`)} className="text-xs font-bold px-4 py-2 h-9 rounded-xl">
+              Continue Conversation
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/dashboard')} className="text-xs font-semibold px-4 py-2 h-9 rounded-xl">
+              Finish For Now
+            </Button>
+          </div>
+        </Card>
+      </Section>
+
+      {/* ── Session ID footer ─────────────────────────────────── */}
+      <Section delay={0.45}>
+        <p className="text-center text-[9px] text-muted-foreground/45 select-all">
+          Conversation ID: {result.session_id}
         </p>
       </Section>
 

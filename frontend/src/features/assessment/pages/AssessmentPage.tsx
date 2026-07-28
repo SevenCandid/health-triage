@@ -40,6 +40,9 @@ export default function AssessmentPage() {
   const [transcript, setTranscript] = useState<ChatMessage[]>([])
   const [symptomInput, setSymptomInput] = useState('')
   const [showSymptomChips, setShowSymptomChips] = useState(true)
+  const [pendingSymptom, setPendingSymptom] = useState<string | null>(null)
+  const [showPendingConfirmation, setShowPendingConfirmation] = useState(false)
+  const [sufficientInfoConfirmation, setSufficientInfoConfirmation] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom on new messages
@@ -52,21 +55,51 @@ export default function AssessmentPage() {
     mutationFn: assessmentApi.start,
     onSuccess: (res) => {
       startSession(res.data.session_id)
-      setTranscript([{
-        id: crypto.randomUUID(),
-        role: 'SYSTEM',
-        content: "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
-      }])
+      if (res.data.pending_symptom) {
+        setPendingSymptom(res.data.pending_symptom)
+        setShowPendingConfirmation(true)
+        setTranscript([{
+          id: crypto.randomUUID(),
+          role: 'SYSTEM',
+          content: `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+        }])
+      } else {
+        setTranscript([{
+          id: crypto.randomUUID(),
+          role: 'SYSTEM',
+          content: "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?"
+        }])
+      }
     },
     onError: () => {
-      addToast({ type: 'error', message: 'Failed to start assessment. Please try again.' })
+      addToast({ type: 'error', message: 'Failed to start conversation. Please try again.' })
     }
   })
 
-  // Start fresh session on every page mount — clears any stale session ID
+  // Start fresh or resume session on page mount
   useEffect(() => {
-    resetSession()
-    startMutation.mutate(undefined)
+    const queryParams = new URLSearchParams(window.location.search)
+    const isResuming = queryParams.get('resume') === 'true'
+
+    if (isResuming && sessionId) {
+      assessmentApi.getConversationTranscript(sessionId)
+        .then(res => {
+          const msgs = res.data.messages.map(m => ({
+            id: crypto.randomUUID(),
+            role: m.role as 'USER' | 'SYSTEM',
+            content: m.content
+          }))
+          setTranscript(msgs)
+          setShowSymptomChips(true)
+        })
+        .catch(() => {
+          resetSession()
+          startMutation.mutate(undefined)
+        })
+    } else {
+      resetSession()
+      startMutation.mutate(undefined)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -76,8 +109,12 @@ export default function AssessmentPage() {
     onSuccess: (res) => {
       setShowSymptomChips(false)
       if (!res.data.next_question) {
-        completeSession()
-        navigate(`/assessment/${sessionId}/result`)
+        setSufficientInfoConfirmation(true)
+        setTranscript(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'SYSTEM',
+          content: "I think I have enough information to prepare your assessment. Before I summarise everything, is there anything else you've noticed or would like to mention?"
+        }])
       } else {
         setCurrentQuestion(res.data.next_question)
         setTranscript(prev => [...prev, {
@@ -102,8 +139,12 @@ export default function AssessmentPage() {
       assessmentApi.submitAnswer(sessionId!, nodeId, answerText),
     onSuccess: (res) => {
       if (res.data.is_completed) {
-        completeSession()
-        navigate(`/assessment/${sessionId}/result`)
+        setSufficientInfoConfirmation(true)
+        setTranscript(prev => [...prev, {
+          id: crypto.randomUUID(),
+          role: 'SYSTEM',
+          content: "I think I have enough information to prepare your assessment. Before I summarise everything, is there anything else you've noticed or would like to mention?"
+        }])
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
         setTranscript(prev => [...prev, {
@@ -142,9 +183,37 @@ export default function AssessmentPage() {
     symptomsMutation.mutate([symptom])
   }
 
+  const handleConfirmPending = () => {
+    if (!pendingSymptom) return
+    setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'USER', content: `Yes, I still have it` }])
+    setShowPendingConfirmation(false)
+    symptomsMutation.mutate([pendingSymptom])
+  }
+
+  const handleRejectPending = () => {
+    setTranscript(prev => [
+      ...prev,
+      { id: crypto.randomUUID(), role: 'USER', content: "No, something else" },
+      { id: crypto.randomUUID(), role: 'SYSTEM', content: "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?" }
+    ])
+    setShowPendingConfirmation(false)
+    setShowSymptomChips(true)
+  }
+
+  const handleContinueTalking = () => {
+    setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'USER', content: "Continue talking" }])
+    setSufficientInfoConfirmation(false)
+    setShowSymptomChips(true)
+  }
+
+  const handleGenerateAssessment = () => {
+    setSufficientInfoConfirmation(false)
+    completeSession()
+    navigate(`/assessment/${sessionId}/result`)
+  }
+
   const handleAnswerSubmit = (answer: string | string[]) => {
     const answerText = Array.isArray(answer) ? answer.join(',') : answer
-    // Capture node_id NOW before we clear currentQuestion
     const nodeId = currentQuestion!.node_id
     let displayContent = answerText
     if (currentQuestion?.options) {
@@ -193,8 +262,32 @@ export default function AssessmentPage() {
       <div className="shrink-0 border-t border-border/50 bg-background/95 backdrop-blur-md px-3 pt-2 pb-3">
         <div className="mx-auto max-w-2xl space-y-2">
 
+          {/* Health Memory Confirmation */}
+          {showPendingConfirmation && !isThinking && (
+            <div className="flex gap-3 justify-center py-2">
+              <Button onClick={handleConfirmPending} className="flex-1 max-w-[200px] h-11 rounded-xl">
+                Yes, I still have it
+              </Button>
+              <Button onClick={handleRejectPending} variant="outline" className="flex-1 max-w-[200px] h-11 rounded-xl">
+                No, something else
+              </Button>
+            </div>
+          )}
+
+          {/* Sufficient Info Confirmation */}
+          {sufficientInfoConfirmation && !isThinking && (
+            <div className="flex gap-3 justify-center py-2">
+              <Button onClick={handleContinueTalking} variant="outline" className="flex-1 max-w-[200px] h-11 rounded-xl">
+                Continue Talking
+              </Button>
+              <Button onClick={handleGenerateAssessment} className="flex-1 max-w-[200px] h-11 rounded-xl">
+                Generate My Assessment
+              </Button>
+            </div>
+          )}
+
           {/* Symptom chips — shown only before first selection */}
-          {!currentQuestion && !isThinking && !isComplete && showSymptomChips && (
+          {!showPendingConfirmation && !sufficientInfoConfirmation && !currentQuestion && !isThinking && !isComplete && showSymptomChips && (
             <div className="flex overflow-x-auto gap-2 pb-1 hide-scrollbar">
               {COMMON_SYMPTOMS.map(sym => (
                 <button
@@ -209,7 +302,7 @@ export default function AssessmentPage() {
           )}
 
           {/* Free-text input (shown before question is active) */}
-          {!currentQuestion && !isThinking && !isComplete && (
+          {!showPendingConfirmation && !sufficientInfoConfirmation && !currentQuestion && !isThinking && !isComplete && (
             <form onSubmit={handleSymptomSubmit} className="relative flex items-center">
               <Input
                 className="w-full rounded-2xl pl-4 pr-12 h-11 bg-muted/50 border-border/50 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/40"
@@ -231,7 +324,7 @@ export default function AssessmentPage() {
           )}
 
           {/* Question options (shown when there's an active question) */}
-          {currentQuestion && !isThinking && (
+          {!showPendingConfirmation && !sufficientInfoConfirmation && currentQuestion && !isThinking && (
             <QuestionCard
               question={currentQuestion as any}
               onSubmit={handleAnswerSubmit}
