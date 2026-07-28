@@ -1,39 +1,30 @@
+"""Run all database seeds against the configured DATABASE_URL.
+Uses merge (upsert-style) via session.merge so re-runs are safe."""
 import asyncio
+import logging
 import sys
-sys.path.insert(0, 'app')
+sys.path.insert(0, '.')
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(levelname)s %(message)s")
 
 async def main():
-    from sqlalchemy.ext.asyncio import create_async_engine
-    from sqlalchemy import text
+    from app.infrastructure.database.session import async_session_factory
+    from app.infrastructure.database.seed import seed_rule_trees, seed_admin_user
+    from app.infrastructure.database.seeds.seed_master import seed_all_knowledge_base
 
-    DB_URL = "postgresql+asyncpg://postgres:Nexra2026@localhost:5432/health_triage"
-    engine = create_async_engine(DB_URL)
+    # Use a fresh session for each stage so prior partial commits don't pollute state
+    print("Stage 1: Seeding rule trees...")
+    async with async_session_factory() as s1:
+        await seed_rule_trees(s1)
 
-    async with engine.connect() as conn:
-        # List all tables
-        result = await conn.execute(text(
-            "SELECT table_name FROM information_schema.tables "
-            "WHERE table_schema='public' ORDER BY table_name"
-        ))
-        tables = [r[0] for r in result]
-        print("Tables:", tables)
+    print("Stage 2: Seeding knowledge base (languages, symptoms, questions...)...")
+    async with async_session_factory() as s2:
+        await seed_all_knowledge_base(s2)
 
-        if "assessment_sessions" in tables:
-            result2 = await conn.execute(text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name='assessment_sessions' ORDER BY ordinal_position"
-            ))
-            cols = [r[0] for r in result2]
-            print("assessment_sessions columns:", cols)
-        else:
-            print("WARNING: assessment_sessions table does NOT exist!")
+    print("Stage 3: Seeding admin user...")
+    async with async_session_factory() as s3:
+        await seed_admin_user(s3)
 
-        if "triage_sessions" in tables:
-            result3 = await conn.execute(text(
-                "SELECT column_name FROM information_schema.columns "
-                "WHERE table_name='triage_sessions' ORDER BY ordinal_position"
-            ))
-            cols3 = [r[0] for r in result3]
-            print("triage_sessions columns:", cols3)
+    print("All seeds complete.")
 
 asyncio.run(main())
