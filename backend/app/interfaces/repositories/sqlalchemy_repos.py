@@ -89,7 +89,27 @@ class SqlAlchemyUserRepository(IUserRepository):
         return result.scalar_one_or_none()
 
     async def get_by_identifier(self, identifier: str) -> Optional[UserModel]:
-        """Retrieves a user record by phone number OR email."""
+        """Retrieves a user record by phone number OR email (supporting flexible formatting)."""
+        clean_id = identifier.replace(" ", "").replace("-", "").replace("(", "").replace(")", "")
+        
+        # If it looks like a phone number (does not contain '@')
+        if "@" not in clean_id:
+            suffix = clean_id.lstrip("0")
+            if len(suffix) >= 7:
+                result = await self._session.execute(
+                    select(UserModel).where(
+                        or_(
+                            UserModel.phone_number == clean_id,
+                            UserModel.phone_number == f"+{clean_id}",
+                            UserModel.phone_number.like(f"%{suffix}"),
+                            UserModel.email == identifier,
+                        )
+                    )
+                )
+                user = result.scalar_one_or_none()
+                if user:
+                    return user
+
         result = await self._session.execute(
             select(UserModel).where(
                 or_(
