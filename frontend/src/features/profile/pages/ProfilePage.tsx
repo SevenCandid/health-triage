@@ -211,12 +211,7 @@ function HistoryTab() {
   })
   const sessions = data?.data?.items ?? []
 
-  const SEVERITY_COLOR: Record<string, string> = {
-    RED: 'bg-urgency-emergency/10 text-urgency-emergency border-urgency-emergency/30',
-    ORANGE: 'bg-urgency-urgent/10 text-urgency-urgent border-urgency-urgent/30',
-    YELLOW: 'bg-urgency-elevated/10 text-urgency-elevated border-urgency-elevated/30',
-    GREEN: 'bg-urgency-routine/10 text-urgency-routine border-urgency-routine/30',
-  }
+
 
   if (isLoading) return <PageLoader />
 
