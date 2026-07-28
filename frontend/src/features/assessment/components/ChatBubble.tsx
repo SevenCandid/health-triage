@@ -19,7 +19,7 @@ export function ChatBubble({ role, message, animate = true }: ChatBubbleProps) {
     >
       {!isUser && (
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white text-[10px] font-bold shadow-sm mt-0.5">
-          AI
+          TA
         </div>
       )}
 

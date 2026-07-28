@@ -41,7 +41,7 @@ export function Navbar() {
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 font-bold text-foreground">
           <span className="text-2xl">❤️‍🩹</span>
-          <span className="hidden sm:block">Health Triage</span>
+          <span className="hidden sm:block">Triage Assistant</span>
         </NavLink>
 
         {/* Desktop Nav */}

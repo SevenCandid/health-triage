@@ -167,23 +167,6 @@ export default function AssessmentPage() {
      */
     <div className="fixed inset-0 flex flex-col bg-background" style={{ top: '3.5rem', bottom: '2.5rem' }}>
 
-      {/* ── Compact Header ────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border/50 bg-background/80 px-4 py-3 backdrop-blur-md">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 text-white text-xs font-bold shadow">
-          AI
-        </div>
-        <div>
-          <p className="text-sm font-semibold leading-none">Triage Assistant</p>
-          <p className="text-xs text-muted-foreground mt-0.5">Clinical AI · Always available</p>
-        </div>
-        <button
-          onClick={() => navigate('/history')}
-          className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-muted"
-        >
-          History
-        </button>
-      </div>
-
       {/* ── Scrollable Chat Area ───────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mx-auto max-w-2xl flex flex-col">

@@ -72,7 +72,7 @@ export default function LandingPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 font-bold text-foreground">
             <span className="text-2xl">❤️‍🩹</span>
-            <span>Health Triage</span>
+            <span>Triage Assistant</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>Sign In</Button>
