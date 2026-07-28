@@ -8,11 +8,12 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-  { to: '/assessment', label: 'Assessment', icon: '🩺' },
-  { to: '/history', label: 'History', icon: '📋' },
+  { to: '/dashboard', label: 'Assess', icon: '🏠' },
+  { to: '/insights', label: 'Insights', icon: '📊' },
+  { to: '/history', label: 'History', icon: '📜' },
   { to: '/emergency', label: 'Emergency', icon: '🚨' },
   { to: '/profile', label: 'Profile', icon: '👤' },
+  { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export function Navbar() {
@@ -31,7 +32,7 @@ export function Navbar() {
 
   const isGuest = userRole === 'GUEST'
   const activeItems = isGuest
-    ? navItems.filter(item => item.to === '/dashboard' || item.to === '/assessment')
+    ? navItems.filter(item => item.to === '/dashboard' || item.to === '/emergency' || item.to === '/settings')
     : navItems
 
   return (

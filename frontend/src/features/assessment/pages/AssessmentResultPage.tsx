@@ -6,6 +6,8 @@ import { assessmentApi } from '@/services/api'
 import { useAssessmentStore } from '@/stores/assessment-store'
 import { PageLoader } from '@/components/common/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
+import { useAuthStore } from '@/stores/auth-store'
+import { Card } from '@/components/ui/Card'
 
 // ── Risk level config ────────────────────────────────────────────────────────
 
@@ -147,6 +149,7 @@ export default function AssessmentResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
   const resetSession = useAssessmentStore((s) => s.resetSession)
+  const { userRole, clearAuth } = useAuthStore()
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['assessmentResult', sessionId],
@@ -309,6 +312,26 @@ export default function AssessmentResultPage() {
             </div>
             <p className="px-4 py-3 text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
           </div>
+        </Section>
+      )}
+
+      {/* Guest Signup Promotion */}
+      {userRole === 'GUEST' && (
+        <Section delay={0.25}>
+          <Card className="border-primary/30 bg-primary/5 text-center p-5 space-y-3">
+            <p className="text-2xl">✨</p>
+            <p className="text-xs font-bold text-foreground leading-relaxed">
+              Create a free account to save this assessment and track your health over time.
+            </p>
+            <div className="flex gap-2 justify-center pt-1">
+              <Button size="sm" onClick={() => { clearAuth(); navigate('/register') }} className="text-xs font-bold px-3 py-1.5 h-8">
+                Create Account
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { clearAuth(); navigate('/login') }} className="text-xs font-semibold px-3 py-1.5 h-8">
+                Sign In
+              </Button>
+            </div>
+          </Card>
         </Section>
       )}
 

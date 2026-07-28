@@ -4,10 +4,9 @@ import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 const tabItems = [
-  { to: '/dashboard', label: 'Home', icon: '🏠' },
-  { to: '/assessment', label: 'Triage', icon: '🩺' },
+  { to: '/dashboard', label: 'Assess', icon: '🏠' },
+  { to: '/history', label: 'History', icon: '📜' },
   { to: '/emergency', label: 'Emergency', icon: '🚨' },
-  { to: '/history', label: 'History', icon: '📋' },
   { to: '/profile', label: 'Profile', icon: '👤' },
 ]
 
@@ -21,7 +20,7 @@ export function BottomTabBar() {
 
   const isGuest = userRole === 'GUEST'
   const activeTabs = isGuest
-    ? tabItems.filter(item => item.to === '/dashboard' || item.to === '/assessment')
+    ? tabItems.filter(item => item.to === '/dashboard' || item.to === '/emergency')
     : tabItems
 
   return (

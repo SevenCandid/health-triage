@@ -20,6 +20,8 @@ const ProfilePage          = lazy(() => import('@/features/profile/pages/Profile
 const SettingsPage         = lazy(() => import('@/features/settings/pages/SettingsPage'))
 const VoicePage            = lazy(() => import('@/features/voice/pages/VoicePage'))
 const NotFoundPage         = lazy(() => import('@/features/error/pages/NotFoundPage'))
+const LandingPage          = lazy(() => import('@/features/landing/pages/LandingPage'))
+const InsightsPage         = lazy(() => import('@/features/insights/pages/InsightsPage'))
 
 // ── Guards ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +52,16 @@ function Page({ children }: { children: React.ReactNode }) {
 // ── Router Definition ─────────────────────────────────────────────────────────
 
 export const router = createBrowserRouter([
+  // ── Public Landing Page ──────────────────────────────────────────────────
+  {
+    path: '/',
+    element: (
+      <RedirectIfAuth>
+        <Page><LandingPage /></Page>
+      </RedirectIfAuth>
+    ),
+  },
+
   // ── Auth Routes ──────────────────────────────────────────────────────────
   {
     element: <AuthLayout />,
@@ -85,6 +97,10 @@ export const router = createBrowserRouter([
       {
         path: '/dashboard',
         element: <Page><DashboardPage /></Page>,
+      },
+      {
+        path: '/insights',
+        element: <Page><InsightsPage /></Page>,
       },
       {
         path: '/assessment',

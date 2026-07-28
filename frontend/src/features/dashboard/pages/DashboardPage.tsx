@@ -2,24 +2,20 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import {
-  AreaChart, Area, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
-import { assessmentApi, profileApi } from '@/services/api'
+import { assessmentApi, profileApi, authApi } from '@/services/api'
 import { useNetworkStore } from '@/stores/network-store'
 import { useAuthStore } from '@/stores/auth-store'
 import { Card } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
 import { PageLoader } from '@/components/common/LoadingSpinner'
 import type { AssessmentSession } from '@/types'
+import { ChevronRight, PhoneCall, History, User, BarChart2 } from 'lucide-react'
 
-// ── Animation wrapper ──────────────────────────────────────────────────────────
+// ── Animation Helper ──────────────────────────────────────────────────────────
 
 function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay, ease: 'easeOut' }}
     >
@@ -28,67 +24,31 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
   )
 }
 
-// ── Stat Card ──────────────────────────────────────────────────────────────────
+// ── Quick Action Card Component ───────────────────────────────────────────────
 
-function StatCard({ icon, label, value, color }: {
-  icon: string; label: string; value: string | number; color?: string
+function QuickAction({ icon: Icon, label, description, onClick }: {
+  icon: React.ComponentType<any>
+  label: string
+  description: string
+  onClick: () => void
 }) {
   return (
-    <Card className="flex items-center gap-2.5 p-3">
-      <div className={`h-8 w-8 rounded-lg flex items-center justify-center text-base flex-shrink-0 ${color ?? 'bg-primary/10'}`}>
-        {icon}
+    <button
+      onClick={onClick}
+      className="text-left w-full border border-border/80 bg-card hover:bg-accent/40 rounded-xl p-3.5 flex items-center justify-between shadow-sm transition-all hover:-translate-y-0.5 active:scale-[0.98]"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+          <Icon className="h-4.5 w-4.5" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="text-xs font-bold text-foreground leading-snug">{label}</h3>
+          <p className="text-[10px] text-muted-foreground truncate leading-normal">{description}</p>
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-muted-foreground font-medium leading-none truncate">{label}</p>
-        <p className="text-xl font-bold text-foreground mt-0.5 leading-none">{value}</p>
-      </div>
-    </Card>
+      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    </button>
   )
-}
-
-// ── Custom Tooltip ─────────────────────────────────────────────────────────────
-
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="rounded-md border border-border bg-card px-2.5 py-1.5 shadow-lg text-xs">
-      <p className="font-semibold text-foreground mb-0.5">{label}</p>
-      {payload.map((p: any) => (
-        <p key={p.name} style={{ color: p.color }}>{p.name}: <strong>{p.value}</strong></p>
-      ))}
-    </div>
-  )
-}
-
-// ── Derived analytics ──────────────────────────────────────────────────────────
-
-function deriveStats(sessions: AssessmentSession[]) {
-  const completed = sessions.filter(s => s.status === 'COMPLETED')
-
-  const now = new Date()
-  const monthlyMap: Record<string, { month: string; total: number; safe: number }> = {}
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const key = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
-    monthlyMap[key] = { month: key, total: 0, safe: 0 }
-  }
-  completed.forEach(s => {
-    const key = new Date(s.created_at).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
-    if (monthlyMap[key]) { monthlyMap[key].total++; monthlyMap[key].safe++ }
-  })
-  const monthlyTrend = Object.values(monthlyMap)
-
-  const recent = [...completed]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 5)
-
-  return {
-    monthlyTrend,
-    recent,
-    totalSessions: sessions.length,
-    completedCount: completed.length,
-    lastSession: recent[0],
-  }
 }
 
 // ── Main Dashboard ─────────────────────────────────────────────────────────────
@@ -96,43 +56,102 @@ function deriveStats(sessions: AssessmentSession[]) {
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { isOnline } = useNetworkStore()
-  const profileCompleted = useAuthStore((s) => s.profileCompleted)
+  const { userRole, profileCompleted } = useAuthStore()
 
-  const { data: historyData, isLoading } = useQuery({
-    queryKey: ['assessmentHistory'],
-    queryFn: async () => {
-      try { return await assessmentApi.getHistory(1, 100) } catch { return null }
-    },
-    retry: false,
+  // Fetch registered user credentials (for greeting)
+  const { data: authData, isLoading: authLoading } = useQuery({
+    queryKey: ['authProfile'],
+    queryFn: () => authApi.getProfile(),
     staleTime: 30_000,
+    enabled: userRole !== 'GUEST',
   })
 
-  const { data: profileData } = useQuery({
+  // Fetch health profile details
+  const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      try { return await profileApi.getProfile() } catch (err: any) {
+      try {
+        return await profileApi.getProfile()
+      } catch (err: any) {
         if (err?.response?.status === 404) return null
         throw err
       }
     },
     retry: false,
     staleTime: 30_000,
-    enabled: profileCompleted,
+    enabled: userRole !== 'GUEST' && profileCompleted,
   })
 
-  const sessions = useMemo(() => historyData?.data?.items ?? [], [historyData])
-  const stats = useMemo(() => deriveStats(sessions), [sessions])
+  // Fetch assessment history (to find most recent assessment)
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['assessmentHistory'],
+    queryFn: async () => {
+      try {
+        return await assessmentApi.getHistory(1, 10)
+      } catch {
+        return null
+      }
+    },
+    retry: false,
+    staleTime: 15_000,
+    enabled: userRole !== 'GUEST',
+  })
+
+  const sessions: AssessmentSession[] = useMemo(() => historyData?.data?.items ?? [], [historyData])
+  const completedSessions = useMemo(() => sessions.filter(s => s.status === 'COMPLETED'), [sessions])
+  
+  // Find the single most recent completed assessment
+  const lastSession = useMemo(() => {
+    if (!completedSessions.length) return null
+    return [...completedSessions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+  }, [completedSessions])
+
+  // Fetch detail for last session to get severity and recommendations
+  const { data: lastSessionResultData, isLoading: lastSessionResultLoading } = useQuery({
+    queryKey: ['lastSessionResult', lastSession?.id],
+    queryFn: () => assessmentApi.getResult(lastSession!.id),
+    enabled: !!lastSession?.id,
+    retry: false,
+  })
+
   const profile = profileData?.data
+  const authUser = authData?.data
 
   const [bannerDismissed, setBannerDismissed] = useState(false)
-  const showProfileBanner = !profileCompleted && !bannerDismissed
+  const showProfileBanner = userRole !== 'GUEST' && !profileCompleted && !bannerDismissed
 
-  if (isLoading) return <PageLoader />
+  if (authLoading || profileLoading || historyLoading || lastSessionResultLoading) return <PageLoader />
+
+  // Extract First Name
+  const rawName = profile?.full_name || authUser?.full_name || ''
+  const firstName = rawName ? rawName.trim().split(' ')[0] : 'Guest'
+
+  const RISK_COLORS: Record<string, string> = {
+    LOW: 'bg-green-500/10 text-green-600 border-green-500/20',
+    GREEN: 'bg-green-500/10 text-green-600 border-green-500/20',
+    MEDIUM: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+    YELLOW: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
+    HIGH: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    ORANGE: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+    EMERGENCY: 'bg-red-500/10 text-red-600 border-red-500/20 animate-pulse',
+    RED: 'bg-red-500/10 text-red-600 border-red-500/20 animate-pulse',
+  }
+
+  const RISK_EMOJIS: Record<string, string> = {
+    LOW: '🟢',
+    GREEN: '🟢',
+    MEDIUM: '🟡',
+    YELLOW: '🟡',
+    HIGH: '🟠',
+    ORANGE: '🟠',
+    EMERGENCY: '🔴',
+    RED: '🔴',
+  }
 
   return (
-    <div className="mx-auto max-w-2xl px-3 pt-3 pb-20 space-y-3">
+    <div className="mx-auto max-w-2xl px-3 pt-3 pb-24 space-y-4">
 
-      {/* ── Profile Reminder Banner ─────────────────────────── */}
+      {/* ── Profile Setup Alert ────────────────────────────────── */}
       {showProfileBanner && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
@@ -152,171 +171,120 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* ── Header ─────────────────────────────────────────── */}
+      {/* ── Welcome Greeting ───────────────────────────────────── */}
       <FadeIn>
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-lg font-bold text-foreground leading-tight">
-              {profile?.full_name ? `Hi, ${profile.full_name.split(' ')[0]} 👋` : 'Dashboard'}
+            <h1 className="text-xl font-extrabold text-foreground tracking-tight">
+              Hello, {firstName}
             </h1>
-            <p className="text-xs text-muted-foreground">Your health overview</p>
+            <p className="text-xs text-muted-foreground mt-0.5">How are you feeling today?</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className={`flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full ${isOnline ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
-              <div className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-yellow-500'}`} />
-              {isOnline ? 'Online' : 'Offline'}
-            </div>
-            <Button onClick={() => navigate('/assessment')} size="sm" className="text-xs h-7 px-2.5">💬 Triage</Button>
+          <div className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${isOnline ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
+            <div className={`h-1 w-1 rounded-full ${isOnline ? 'bg-green-500' : 'bg-yellow-500'}`} />
+            {isOnline ? 'Online' : 'Offline'}
           </div>
         </div>
       </FadeIn>
 
-      {/* ── Stat Cards ──────────────────────────────────────── */}
-      <FadeIn delay={0.05}>
-        <div className="grid grid-cols-2 gap-2">
-          <StatCard icon="📊" label="Total Sessions" value={stats.totalSessions} color="bg-blue-500/10" />
-          <StatCard icon="✅" label="Completed" value={stats.completedCount} color="bg-green-500/10" />
-        </div>
-      </FadeIn>
-
-      {/* ── Quick Actions ─────────────────────────────────── */}
-      <FadeIn delay={0.08}>
-        <div className="grid grid-cols-3 gap-2">
-          <QuickAction icon="🎙️" label="Voice" onClick={() => navigate('/voice')} />
-          <QuickAction icon="🚨" label="Emergency" onClick={() => navigate('/emergency')} color="border-red-500/20 hover:border-red-400" />
-          <QuickAction icon="👤" label="Profile" onClick={() => navigate('/profile')} />
-        </div>
-      </FadeIn>
-
-      {/* ── Assessment Trend Chart ───────────────────────────── */}
-      <FadeIn delay={0.1}>
-        <Card className="p-3">
-          <div className="flex items-center justify-between mb-3">
+      {/* ── Large Assess CTA Buttons ───────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <FadeIn delay={0.05}>
+          <button
+            onClick={() => navigate('/assessment')}
+            className="text-left w-full h-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/95 hover:to-primary/75 text-primary-foreground rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all flex flex-col justify-between min-h-[140px] group active:scale-[0.98]"
+          >
+            <span className="text-3xl bg-white/10 h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">🩺</span>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Assessment Trend</h2>
-              <p className="text-[11px] text-muted-foreground">Last 6 months</p>
+              <h2 className="text-base font-bold leading-tight">Start Health Assessment</h2>
+              <p className="text-xs text-primary-foreground/80 mt-1">Interactive symptom triage assistant</p>
             </div>
+          </button>
+        </FadeIn>
+
+        <FadeIn delay={0.08}>
+          <button
+            onClick={() => navigate('/voice')}
+            className="text-left w-full h-full bg-gradient-to-br from-accent/90 to-accent/70 hover:from-accent hover:to-accent/60 text-accent-foreground rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all flex flex-col justify-between min-h-[140px] group active:scale-[0.98]"
+          >
+            <span className="text-3xl bg-black/10 h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">🎤</span>
+            <div>
+              <h2 className="text-base font-bold leading-tight">Start Voice Assessment</h2>
+              <p className="text-xs text-accent-foreground/80 mt-1">Hands-free voice triage session</p>
+            </div>
+          </button>
+        </FadeIn>
+      </div>
+
+      {/* ── Quick Actions ──────────────────────────────────────── */}
+      <FadeIn delay={0.12}>
+        <div className="space-y-2">
+          <h2 className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <QuickAction
+              icon={PhoneCall}
+              label="Emergency Centre"
+              description="Get instant help & contact dispatch"
+              onClick={() => navigate('/emergency')}
+            />
+            <QuickAction
+              icon={History}
+              label="Assessment History"
+              description="View your past triage sessions"
+              onClick={() => navigate('/history')}
+            />
+            <QuickAction
+              icon={User}
+              label="My Profile"
+              description="Manage health history & preferences"
+              onClick={() => navigate('/profile')}
+            />
+            <QuickAction
+              icon={BarChart2}
+              label="Health Insights"
+              description="View health charts & analytics"
+              onClick={() => navigate('/insights')}
+            />
           </div>
-          {stats.monthlyTrend.some(m => m.total > 0) ? (
-            <ResponsiveContainer width="100%" height={160}>
-              <AreaChart data={stats.monthlyTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="gradSafe" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="safe" name="Completed" stroke="#22c55e" strokeWidth={1.5} fill="url(#gradSafe)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart message="Complete your first assessment to see trends" />
-          )}
-        </Card>
+        </div>
       </FadeIn>
 
-      {/* ── Monthly Volume Bar Chart ─────────────────────────── */}
-      <FadeIn delay={0.13}>
-        <Card className="p-3">
-          <h2 className="text-sm font-semibold text-foreground mb-0.5">Monthly Volume</h2>
-          <p className="text-[11px] text-muted-foreground mb-3">Sessions per month</p>
-          {stats.monthlyTrend.some(m => m.total > 0) ? (
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={stats.monthlyTrend} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.2)" />
-                <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="total" name="Sessions" radius={[3, 3, 0, 0]} fill="#6366f1" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <EmptyChart message="No assessment data yet" />
-          )}
-        </Card>
-      </FadeIn>
-
-      {/* ── Recent Assessments ───────────────────────────────── */}
-      <FadeIn delay={0.16}>
-        <Card className="overflow-hidden p-0">
-          <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-            <h2 className="text-sm font-semibold text-foreground">Recent Assessments</h2>
-            <Button variant="outline" size="sm" className="text-xs h-6 px-2" onClick={() => navigate('/history')}>All</Button>
-          </div>
-
-          {stats.recent.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-2xl mb-2">📋</p>
-              <p className="text-xs text-muted-foreground">No completed assessments yet.</p>
-              <div className="flex justify-center gap-2 mt-3">
-                <Button size="sm" className="text-xs h-7 px-2.5" onClick={() => navigate('/assessment')}>Start Triage</Button>
+      {/* ── Recent Assessment ──────────────────────────────────── */}
+      <FadeIn delay={0.18}>
+        <div className="space-y-2">
+          <h2 className="text-xs font-bold text-foreground/80 uppercase tracking-wider">Recent Assessment</h2>
+          {lastSession ? (
+            <Card
+              hover
+              onClick={() => navigate(`/assessment/${lastSession.id}/result`)}
+              className="flex items-center justify-between gap-4 p-4 border border-border bg-card cursor-pointer shadow-sm"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-foreground">
+                    {new Date(lastSession.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
+                  {lastSessionResultData?.data && (
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_COLORS[lastSessionResultData.data.severity] || 'bg-muted'}`}>
+                      {RISK_EMOJIS[lastSessionResultData.data.severity] || '❓'} {lastSessionResultData.data.severity}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  Recommendation: {lastSessionResultData?.data?.recommendations?.[0] || 'Monitor symptoms'}
+                </p>
               </div>
-            </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+            </Card>
           ) : (
-            <div className="divide-y divide-border">
-              {stats.recent.map((session) => {
-                const date = new Date(session.created_at)
-                return (
-                  <div key={session.id} className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-accent/30 transition-colors">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center text-sm flex-shrink-0">🩺</div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium text-foreground truncate">
-                          {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground capitalize">{session.status.toLowerCase()}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border capitalize">
-                        {session.consultation_mode?.toLowerCase() ?? 'text'}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-[10px] h-6 px-2"
-                        onClick={() => navigate(`/assessment/${session.id}/result`)}
-                      >
-                        View
-                      </Button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <Card className="text-center p-6 border border-border bg-card shadow-sm">
+              <p className="text-2xl mb-1">📋</p>
+              <p className="text-xs text-muted-foreground">No previous assessments.</p>
+            </Card>
           )}
-        </Card>
+        </div>
       </FadeIn>
 
     </div>
-  )
-}
-
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function EmptyChart({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-24 text-center">
-      <p className="text-xl mb-1">📊</p>
-      <p className="text-xs text-muted-foreground">{message}</p>
-    </div>
-  )
-}
-
-function QuickAction({ icon, label, onClick, color }: {
-  icon: string; label: string; onClick: () => void; color?: string
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 rounded-xl border border-border bg-card p-3 hover:bg-accent transition-all ${color ?? ''}`}
-    >
-      <span className="text-xl leading-none">{icon}</span>
-      <span className="text-[11px] font-medium text-foreground">{label}</span>
-    </button>
   )
 }
