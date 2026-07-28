@@ -79,8 +79,26 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Create async engine and run migrations within the event loop."""
+    import re
+
+    db_url = DATABASE_URL
+    connect_args: dict = {}
+
+    # asyncpg does not accept sslmode/channel_binding as URL query params.
+    # Strip them out and pass ssl via connect_args instead.
+    if "postgresql+asyncpg" in db_url:
+        if "sslmode=require" in db_url or "sslmode=prefer" in db_url:
+            import ssl
+            connect_args["ssl"] = ssl.create_default_context()
+        # Remove unsupported query params
+        db_url = re.sub(r"[?&]sslmode=[^&]*", "", db_url)
+        db_url = re.sub(r"[?&]channel_binding=[^&]*", "", db_url)
+        # Clean up trailing ? or &
+        db_url = re.sub(r"[?&]$", "", db_url)
+
     connectable = create_async_engine(
-        DATABASE_URL,
+        db_url,
+        connect_args=connect_args,
         poolclass=pool.NullPool,
     )
     async with connectable.connect() as connection:

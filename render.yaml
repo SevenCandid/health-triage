@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: health-triage-api
+    runtime: python
+    region: oregon
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        sync: false          # set manually in Render dashboard
+      - key: JWT_SECRET_KEY
+        generateValue: true  # Render auto-generates a secure random value
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 60
+      - key: GEMINI_API_KEY
+        sync: false          # set manually in Render dashboard
+      - key: CORS_ORIGINS
+        sync: false          # set manually — will include Vercel URL
+    healthCheckPath: /health

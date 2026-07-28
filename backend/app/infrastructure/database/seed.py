@@ -179,6 +179,7 @@ async def seed_admin_user(session: AsyncSession) -> None:
     admin = UserModel(
         id=str(uuid.uuid4()),
         phone_number="+000000000000",
+        full_name="System Admin",
         password_hash=hash_password("AdminPass123!"),
         preferred_language_code="en",
         is_active=True,
@@ -195,7 +196,7 @@ async def run_seeds(session: AsyncSession) -> None:
     """Executes all seed functions in dependency order."""
     logger.info("Running database seed scripts...")
     await seed_rule_trees(session)
-    await seed_admin_user(session)
-    await seed_all_knowledge_base(session)
+    await seed_all_knowledge_base(session)  # seeds languages first
+    await seed_admin_user(session)           # needs languages.code='en' to exist
     logger.info("Database seed scripts completed.")
 

@@ -11,12 +11,29 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+import re
+import ssl as _ssl
+
+def _build_engine_args(url: str) -> tuple[str, dict]:
+    """Strip sslmode/channel_binding query params and return connect_args for asyncpg."""
+    connect_args: dict = {}
+    if "postgresql+asyncpg" in url:
+        if "sslmode=require" in url or "sslmode=prefer" in url:
+            connect_args["ssl"] = _ssl.create_default_context()
+        url = re.sub(r"[?&]sslmode=[^&]*", "", url)
+        url = re.sub(r"[?&]channel_binding=[^&]*", "", url)
+        url = re.sub(r"[?&]$", "", url)
+    return url, connect_args
+
+_db_url, _connect_args = _build_engine_args(settings.DATABASE_URL)
+
 # Configure Async Engine
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _db_url,
     echo=settings.DEBUG,
     future=True,
     pool_pre_ping=True,
+    connect_args=_connect_args,
 )
 
 # Async Session Factory

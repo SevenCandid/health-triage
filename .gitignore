@@ -1,0 +1,50 @@
+# ── Python / Backend ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+ENV/
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Environment / secrets ────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# ── Node / Frontend ──────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# ── Vite / Build ─────────────────────────────────────────────────────────────
+*.local
+.vite/
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.idea/
+.vscode/
+*.swp
+check_db.py
+backend/health_triage.db
+backend/openapi.json
