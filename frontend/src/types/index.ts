@@ -168,6 +168,8 @@ export interface AssessmentResult {
   explanation: string
   is_emergency: boolean
   conducted_at: string
+  symptom_name?: string | null
+  raw_answers?: Record<string, string> | null
 }
 
 export interface StartAssessmentResponse {

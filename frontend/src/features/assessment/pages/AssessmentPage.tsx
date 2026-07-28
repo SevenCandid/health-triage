@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { ChatBubble } from '../components/ChatBubble'
 import { TypingIndicator } from '../components/TypingIndicator'
 import { QuestionCard } from '../components/QuestionCard'
+import { AssessmentNotice } from '../components/AssessmentNotice'
 
 interface ChatMessage {
   id: string
@@ -238,11 +239,14 @@ export default function AssessmentPage() {
 
       {/* ── Scrollable Chat Area ───────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="mx-auto max-w-2xl flex flex-col">
+        <div className="mx-auto max-w-2xl flex flex-col gap-4">
+          <AssessmentNotice />
 
-          {transcript.map((msg) => (
-            <ChatBubble key={msg.id} role={msg.role} message={msg.content} />
-          ))}
+          <div className="flex flex-col gap-3">
+            {transcript.map((msg) => (
+              <ChatBubble key={msg.id} role={msg.role} message={msg.content} />
+            ))}
+          </div>
 
           {startMutation.isError && (
             <div className="flex flex-col items-center gap-3 py-8 text-center">

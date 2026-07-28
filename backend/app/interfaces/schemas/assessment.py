@@ -75,6 +75,8 @@ class AssessmentResultResponse(BaseModel):
     explanation: str
     is_emergency: bool
     conducted_at: datetime
+    symptom_name: Optional[str] = None
+    raw_answers: Optional[Dict[str, str]] = None
 
 
 class AssessmentAnswerResponse(BaseModel):

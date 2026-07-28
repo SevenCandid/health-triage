@@ -263,6 +263,14 @@ async def get_assessment_result(
     """Evaluates and returns the final or current clinical triage result for a session."""
     try:
         sess, eval_result = await service.get_result(session_id)
+        symptom_name = None
+        if sess.symptom_id:
+            sym_res = await service.session.execute(
+                select(SymptomModel).where(SymptomModel.id == sess.symptom_id)
+            )
+            sym = sym_res.scalar_one_or_none()
+            if sym:
+                symptom_name = sym.name_en
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
@@ -273,6 +281,8 @@ async def get_assessment_result(
         explanation=eval_result.explanation,
         is_emergency=eval_result.is_emergency,
         conducted_at=sess.conducted_at,
+        symptom_name=symptom_name,
+        raw_answers=sess.raw_answers_snapshot,
     )
 
 

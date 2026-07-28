@@ -8,6 +8,7 @@ import { PageLoader } from '@/components/common/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/stores/auth-store'
 import { Card } from '@/components/ui/Card'
+import { AssessmentNotice } from '../components/AssessmentNotice'
 
 // ── Risk level config ────────────────────────────────────────────────────────
 
@@ -137,18 +138,11 @@ function Section({ children, delay = 0 }: { children: React.ReactNode; delay?: n
   )
 }
 
-// ── Divider ───────────────────────────────────────────────────────────────────
-
-function Divider() {
-  return <div className="h-px bg-border/60 my-1" />
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function AssessmentResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
-  const resetSession = useAssessmentStore((s) => s.resetSession)
   const { userRole, clearAuth } = useAuthStore()
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -185,16 +179,16 @@ export default function AssessmentResultPage() {
 
   const currentSymptoms = useAssessmentStore((s) => s.currentSymptoms)
   const symptomName = currentSymptoms[0] || 'General Health Concern'
-  const symptomSlug = symptomName.toLowerCase().replace(/\s+/g, '-')
+  const symptomSlug = (result.symptom_name || symptomName).toLowerCase().replace(/\s+/g, '-')
 
   const SYMPTOM_INFO: Record<string, string> = {
-    'headache': 'Headaches can range from mild tension to severe migraines. Common triggers include stress, dehydration, fatigue, or eye strain.',
-    'fever': 'A fever is a temporary increase in body temperature, often due to an illness or infection. It is a sign that your body is fighting off something.',
-    'cough': 'Coughing is a natural reflex to protect your airways from irritants, infections, or fluids.',
-    'chest-pain': 'Chest pain can have various causes, ranging from muscle strain or acid reflux to serious heart conditions.',
-    'shortness-of-breath': 'Difficulty breathing can be related to physical exertion, anxiety, asthma, or respiratory infections.',
+    'headache': 'Headaches are common and may occur for many reasons including dehydration, stress, poor sleep, eye strain, or minor illnesses.',
+    'fever': 'Fevers can indicate that the body is responding to an infection. They often resolve with rest, but can sometimes be a sign of conditions requiring attention.',
+    'cough': 'Coughs are common respiratory responses that can occur due to viruses, allergies, or environmental irritants.',
+    'chest-pain': 'Chest discomfort can happen for a variety of reasons, including acid reflux, muscle strain, stress, or cardiovascular factors.',
+    'shortness-of-breath': 'Difficulty breathing may happen with physical exertion, anxiety, asthma, or respiratory conditions.',
   }
-  const generalInfo = SYMPTOM_INFO[symptomSlug] || 'If you are experiencing new or changing symptoms, it is helpful to monitor their severity and consult a professional if they persist.'
+  const generalInfo = SYMPTOM_INFO[symptomSlug] || 'Symptoms can be triggered by multiple factors, ranging from mild temporary changes to conditions that may need clinical evaluation.'
 
   // Parse explanation into bullet-point reasons
   const reasons = result.explanation
@@ -205,33 +199,18 @@ export default function AssessmentResultPage() {
         .slice(0, 5)
     : []
 
-  const handleStartNew = () => {
-    resetSession()
-    navigate('/assessment')
-  }
-
   return (
     <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-4">
 
-      {/* 🩺 Reusable Health Guidance Disclaimer */}
+      {/* 🩺 Reusable Assessment Notice Disclaimer */}
       <Section delay={0}>
-        <Card className="border-blue-500/20 bg-blue-500/5 p-4 flex gap-3 items-start text-left rounded-2xl">
-          <span className="text-xl">🩺</span>
-          <div>
-            <p className="text-xs font-bold text-foreground mb-1">Health Guidance Disclaimer</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              This assessment provides health guidance based on the information you share. It is not a medical diagnosis and does not replace care from a qualified healthcare professional.
-            </p>
-          </div>
-        </Card>
+        <AssessmentNotice />
       </Section>
 
-      {/* ── Hero Risk Card ─────────────────────────────────────── */}
+      {/* ── Hero Completion Status ─────────────────────────────── */}
       <Section delay={0.05}>
         <div className={`relative rounded-2xl overflow-hidden border-2 ${cfg.ring} shadow-lg`}>
-          {/* Top gradient banner */}
           <div className={`bg-gradient-to-br ${cfg.gradient} px-5 py-6 flex flex-col items-center text-center text-white`}>
-            {/* Pulsing ring + emoji */}
             <div className="relative mb-3">
               <div className={`absolute inset-0 rounded-full ${cfg.pulseColor} opacity-30 animate-ping`} style={{ animationDuration: '2s' }} />
               <div className={`relative h-16 w-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-4xl shadow-inner`}>
@@ -245,7 +224,6 @@ export default function AssessmentResultPage() {
             <h1 className="text-2xl font-extrabold tracking-tight">{cfg.label}</h1>
             <p className="text-sm opacity-85 mt-1 font-medium">{cfg.sublabel}</p>
 
-            {/* Date */}
             {result.conducted_at && (
               <p className="text-[11px] opacity-60 mt-3">
                 {new Date(result.conducted_at).toLocaleDateString('en-GB', {
@@ -255,7 +233,6 @@ export default function AssessmentResultPage() {
             )}
           </div>
 
-          {/* Risk meter bar */}
           <div className="h-1.5 w-full bg-muted">
             <motion.div
               className={`h-full ${cfg.accentBar}`}
@@ -272,103 +249,110 @@ export default function AssessmentResultPage() {
         </div>
       </Section>
 
-      {/* ── 1. What We Understood ───────────────────────────────── */}
+      {/* ── SECTION 1: What We Understood ─────────────────────── */}
       <Section delay={0.1}>
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1">
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-2">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            💬 1. What We Understood
+            💬 SECTION 1: What We Understood
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Reported Symptom: <span className="font-semibold text-foreground">{symptomName}</span>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Reported Symptom: <span className="font-semibold text-foreground">{result.symptom_name || symptomName}</span></p>
+            {result.raw_answers && Object.keys(result.raw_answers).length > 0 && (
+              <ul className="space-y-1 pt-1 border-t border-border/40 mt-1">
+                {Object.entries(result.raw_answers).map(([key, val]) => (
+                  <li key={key} className="list-disc ml-4">
+                    <span className="font-medium text-foreground">{key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}:</span> {val}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </Section>
+
+      {/* ── SECTION 2: General Information ────────────────────── */}
+      <Section delay={0.15}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
+          <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
+            📖 SECTION 2: General Information
+          </h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {generalInfo}
           </p>
         </div>
       </Section>
 
-      {/* ── 2. General Information ──────────────────────────────── */}
-      <Section delay={0.15}>
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1">
-          <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            📖 2. General Information
-          </h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">{generalInfo}</p>
+      {/* ── SECTION 3: Why This Recommendation ─────────────────── */}
+      <Section delay={0.2}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+            <span className="text-sm">🔬</span>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 3: Why This Recommendation</h2>
+          </div>
+          <div className="px-4 py-3 space-y-2">
+            {reasons.length > 0 ? (
+              reasons.map((reason: string, i: number) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0 ${cfg.pulseColor}`} />
+                  <p className="text-xs text-muted-foreground leading-relaxed">{reason}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {result.explanation || "Your responses indicate signs that warrant the chosen recommendation to ensure proper health management."}
+              </p>
+            )}
+          </div>
         </div>
       </Section>
 
-      {/* ── 3. Why this recommendation was chosen ───────────────── */}
-      {reasons.length > 0 && (
-        <Section delay={0.2}>
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-sm">🔬</span>
-              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">3. Why this recommendation was chosen</h2>
-            </div>
-            <div className="px-4 py-3 space-y-2">
-              {reasons.map((reason: string, i: number) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.25 + i * 0.06 }}
-                  className="flex items-start gap-2"
-                >
-                  <span className={`mt-1.5 h-1.5 w-1.5 rounded-full flex-shrink-0 ${cfg.pulseColor}`} />
-                  <p className="text-xs text-muted-foreground leading-relaxed">{reason}</p>
-                </motion.div>
-              ))}
-            </div>
+      {/* ── SECTION 4: Self-care Suggestions ───────────────────── */}
+      <Section delay={0.25}>
+        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
+            <span className="text-sm">🩹</span>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 4: Self-care Suggestions</h2>
           </div>
-        </Section>
-      )}
+          <ul className="divide-y divide-border/60">
+            <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 text-sm">🛏️</span>
+              <p className="leading-snug">Ensure adequate rest to allow the body to recover.</p>
+            </li>
+            <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 text-sm">💧</span>
+              <p className="leading-snug">Maintain hydration by drinking clear fluids regularly.</p>
+            </li>
+            <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 text-sm">🥗</span>
+              <p className="leading-snug">Eat balanced, healthy meals to support immune function.</p>
+            </li>
+            <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 text-sm">📱</span>
+              <p className="leading-snug">Avoid excessive screen time to reduce eye strain and fatigue.</p>
+            </li>
+            <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 text-sm">📊</span>
+              <p className="leading-snug">Monitor your symptoms closely and note any changes or worsening trends.</p>
+            </li>
+          </ul>
+        </div>
+      </Section>
 
-      {reasons.length === 0 && result.explanation && (
-        <Section delay={0.2}>
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-sm">🔬</span>
-              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">3. Why this recommendation was chosen</h2>
-            </div>
-            <p className="px-4 py-3 text-xs text-muted-foreground leading-relaxed">{result.explanation}</p>
-          </div>
-        </Section>
-      )}
-
-      {/* ── 4. General self-care suggestions ───────────────────── */}
-      {result.recommendations?.length > 0 && (
-        <Section delay={0.25}>
-          <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-              <span className="text-sm">🩹</span>
-              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">4. General Self-Care Suggestions</h2>
-            </div>
-            <div className="divide-y divide-border/60">
-              {result.recommendations.map((rec: string, i: number) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.15 + i * 0.07 }}
-                  className="flex items-start gap-3 px-4 py-3"
-                >
-                  <span className="mt-0.5 text-sm flex-shrink-0">
-                    {i === 0 ? '✅' : i === 1 ? '💧' : i === 2 ? '🛏️' : i === 3 ? '📅' : '🩺'}
-                  </span>
-                  <p className="text-xs text-foreground leading-snug">{rec}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </Section>
-      )}
-
-      {/* ── 5. Warning signs to watch for ──────────────────────── */}
+      {/* ── SECTION 5: Warning Signs ────────────────────────────── */}
       <Section delay={0.3}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            ⚠️ 5. Warning Signs to Watch For
+            ⚠️ SECTION 5: Warning Signs
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Please seek immediate medical attention if you experience difficulty breathing, sudden severe pain, chest tightness, high fever resistant to medication, sudden confusion, or loss of consciousness.
+            Please seek immediate medical attention if you experience key warning signs such as:
           </p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4 pt-1">
+            <li>Difficulty breathing or severe shortness of breath</li>
+            <li>Loss of consciousness or sudden fainting</li>
+            <li>Sudden weakness, numbness, or difficulty speaking</li>
+            <li>Severe chest pain or tightness</li>
+          </ul>
         </div>
       </Section>
 
@@ -392,63 +376,56 @@ export default function AssessmentResultPage() {
         </Section>
       )}
 
-      {/* ── 6. Recommended next steps ──────────────────────────── */}
+      {/* ── SECTION 6: Recommendation ───────────────────────────── */}
       <Section delay={0.35}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-            <span className="text-sm">🗺️</span>
-            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">6. Recommended Next Steps</h2>
+            <span className="text-sm">📋</span>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 6: Recommendation</h2>
           </div>
-          <div className="p-3 space-y-2">
+          <div className="p-4 space-y-3">
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${cfg.gradient} text-white`}>
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-75">Triage Severity</p>
+              <h3 className="text-lg font-bold">{cfg.label}</h3>
+              <p className="text-xs opacity-90 mt-1">{cfg.sublabel}</p>
+            </div>
+            
+            {result.recommendations?.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-bold text-foreground">Actions Recommended by Rule Engine:</p>
+                {result.recommendations.map((rec: string, i: number) => (
+                  <p key={i} className="text-xs text-muted-foreground flex gap-2">
+                    <span>•</span> <span>{rec}</span>
+                  </p>
+                ))}
+              </div>
+            )}
 
-            {/* Emergency CTA — only when high risk */}
             {isEmergency && (
               <motion.button
                 initial={{ scale: 0.97, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.35 }}
                 onClick={() => navigate('/emergency')}
-                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl py-3 transition-all shadow-md shadow-red-500/30"
+                className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl py-3 mt-2 transition-all shadow-md shadow-red-500/30"
               >
                 <span>🚨</span> Call Emergency Services
               </motion.button>
             )}
 
-            {/* Find Hospital */}
             <button
               onClick={() => window.open('https://www.google.com/maps/search/hospital+near+me', '_blank')}
-              className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all"
+              className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all mt-2"
             >
               <span>🏥</span> Find Nearby Hospital
-            </button>
-
-            {/* Call Doctor (non-emergency) */}
-            {!isEmergency && (
-              <button
-                onClick={() => navigate('/emergency')}
-                className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all"
-              >
-                <span>📞</span> Call My Doctor / Contact
-              </button>
-            )}
-
-            <Divider />
-
-            {/* Start New */}
-            <button
-              onClick={handleStartNew}
-              className={`w-full flex items-center justify-center gap-2 font-semibold text-xs rounded-xl py-2.5 transition-all bg-primary hover:bg-primary/90 text-primary-foreground`}
-            >
-              <span>🔄</span> Start New Conversation
             </button>
           </div>
         </div>
       </Section>
 
-      {/* ── 7. Continue Conversation ───────────────────────────── */}
+      {/* ── SECTION 7: Continue Conversation ───────────────────── */}
       <Section delay={0.4}>
-        <Card className="border-border bg-muted/20 p-5 text-center space-y-3 rounded-2xl">
-          <p className="text-xs font-semibold text-foreground">Would you like to continue discussing your health?</p>
+        <Card className="border-border bg-muted/20 p-5 text-center space-y-4 rounded-2xl">
+          <p className="text-xs font-semibold text-foreground">Is there anything else you'd like to talk about today?</p>
           <div className="flex gap-2 justify-center">
             <Button onClick={() => navigate(`/assessment?resume=true`)} className="text-xs font-bold px-4 py-2 h-9 rounded-xl">
               Continue Conversation
