@@ -309,7 +309,7 @@ function ContactsTab({ contacts }: { contacts: EmergencyContact[] }) {
                   <input type="checkbox" checked={form.is_primary} onChange={e => setForm(p => ({ ...p, is_primary: e.target.checked }))} className="rounded" />
                   <span className="text-sm text-foreground">Set as primary contact</span>
                 </label>
-                <div className="flex gap-3 pt-2">
+                 <div className="flex gap-3 pt-2">
                   <Button onClick={() => addMutation.mutate(form)} disabled={addMutation.isPending || !form.contact_name || !form.phone_number}>
                     {addMutation.isPending ? 'Saving…' : 'Save Contact'}
                   </Button>
@@ -343,53 +343,103 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+import { GuestBlock } from '@/components/common/GuestBlock'
+import { authApi } from '@/services/api'
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const { isOnline } = useNetworkStore()
-  const profileCompleted = useAuthStore((s) => s.profileCompleted)
+  const { userRole, profileCompleted } = useAuthStore()
 
+  // Fetch registered user auth details
+  const { data: authData, isLoading: authLoading } = useQuery({
+    queryKey: ['authProfile'],
+    queryFn: () => authApi.getProfile(),
+    staleTime: 30_000,
+    enabled: userRole !== 'GUEST',
+  })
+
+  // Fetch health profile details
   const { data, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
       try {
         return await profileApi.getProfile()
       } catch (err: any) {
-        // 404 means no profile yet — that's expected for new users
         if (err?.response?.status === 404) return null
         throw err
       }
     },
-    retry: false, // don't retry 404s
+    retry: false,
     staleTime: 30_000,
-    enabled: profileCompleted, // Don't even fetch if we know they haven't completed it
+    enabled: userRole !== 'GUEST' && profileCompleted,
   })
 
+  if (userRole === 'GUEST') {
+    return <GuestBlock featureName="Profile" icon="👤" />
+  }
+
+  if (isLoading || authLoading) return <PageLoader />
+
+  const authUser = authData?.data ?? null
   const profile = data?.data ?? null
   const contacts = profile?.emergency_contacts ?? []
 
-  if (isLoading) return <PageLoader />
+  // Merged profile for prefilling
+  const displayProfile = profile || (authUser ? {
+    id: authUser.id,
+    full_name: authUser.full_name,
+    age: undefined,
+    biological_sex: 'MALE',
+    blood_group: '',
+    chronic_conditions: [],
+    known_allergies: [],
+    emergency_contacts: [],
+  } as any : null)
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-4 sm:pt-8 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-          <p className="text-muted-foreground mt-1">
-            {profile?.full_name ?? 'Set up your health profile'}
+          <h1 className="text-2xl font-bold text-foreground">My Profile</h1>
+          <p className="text-xs text-muted-foreground mt-1">
+            {profile ? 'Manage your medical profile' : 'Set up your health profile'}
           </p>
         </div>
-        <div className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${isOnline ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
-          <div className={`h-2 w-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        <div className={`flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-full ${isOnline ? 'bg-green-500/10 text-green-600' : 'bg-yellow-500/10 text-yellow-600'}`}>
+          <div className={`h-1.5 w-1.5 rounded-full ${isOnline ? 'bg-green-500' : 'bg-yellow-500'}`} />
           {isOnline ? 'Online' : 'Offline'}
         </div>
       </div>
 
+      {/* Registered credentials overview */}
+      {authUser && (
+        <Card className="mb-4 bg-muted/40 p-3" padding="none">
+          <div className="flex flex-col gap-1.5 text-xs px-1">
+            <div className="flex justify-between py-1 border-b border-border/40">
+              <span className="text-muted-foreground">Full Name</span>
+              <span className="font-semibold text-foreground">{authUser.full_name}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-border/40">
+              <span className="text-muted-foreground">Registered Phone</span>
+              <span className="font-mono text-foreground">{authUser.phone_number}</span>
+            </div>
+            {authUser.email && (
+              <div className="flex justify-between py-1">
+                <span className="text-muted-foreground">Registered Email</span>
+                <span className="font-mono text-foreground">{authUser.email}</span>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+
       {/* Avatar */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-6">
         <div className="relative">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-4xl text-white shadow-lg">
-            {profile?.full_name?.[0]?.toUpperCase() ?? '?'}
+          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-2xl text-white shadow-md">
+            {authUser?.full_name?.[0]?.toUpperCase() ?? '?'}
           </div>
         </div>
       </div>
@@ -421,7 +471,7 @@ export default function ProfilePage() {
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.15 }}
         >
-          {activeTab === 'profile' && <ProfileTab profile={profile} />}
+          {activeTab === 'profile' && <ProfileTab profile={displayProfile} />}
           {activeTab === 'history' && <HistoryTab />}
           {activeTab === 'contacts' && <ContactsTab contacts={contacts} />}
         </motion.div>

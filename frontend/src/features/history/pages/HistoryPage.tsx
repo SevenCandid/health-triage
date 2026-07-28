@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PageLoader } from '@/components/common/LoadingSpinner'
 import type { AssessmentSession } from '@/types'
+import { useAuthStore } from '@/stores/auth-store'
+import { GuestBlock } from '@/components/common/GuestBlock'
 
 const STATUS_STYLE: Record<string, string> = {
   COMPLETED: 'bg-green-500/10 text-green-600 border-green-500/20',
@@ -28,6 +30,7 @@ export default function HistoryPage() {
   const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [filter, setFilter] = useState<string>('ALL')
+  const { userRole } = useAuthStore()
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['assessmentHistory', page],
@@ -40,7 +43,12 @@ export default function HistoryPage() {
     },
     retry: false,
     staleTime: 30_000,
+    enabled: userRole !== 'GUEST',
   })
+
+  if (userRole === 'GUEST') {
+    return <GuestBlock featureName="Assessment History" icon="📋" />
+  }
 
   const allItems: AssessmentSession[] = data?.data?.items ?? []
   const total: number = data?.data?.total ?? 0

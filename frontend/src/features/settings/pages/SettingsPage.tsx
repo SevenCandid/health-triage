@@ -167,7 +167,12 @@ function VoiceSettings() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
+import { useAuthStore } from '@/stores/auth-store'
+import { GuestBlock } from '@/components/common/GuestBlock'
+
 export default function SettingsPage() {
+  const { userRole } = useAuthStore()
+
   const {
     highContrast, setHighContrast,
     reduceMotion, setReduceMotion,
@@ -178,6 +183,10 @@ export default function SettingsPage() {
   } = useSettingsStore()
 
   const { isOnline } = useNetworkStore()
+
+  if (userRole === 'GUEST') {
+    return <GuestBlock featureName="Settings" icon="⚙️" />
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 pt-4 sm:pt-8 pb-24 space-y-6">

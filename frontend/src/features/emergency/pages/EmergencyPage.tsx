@@ -7,6 +7,8 @@ import { useOnlineStatus } from '@/hooks/use-online-status'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { PageLoader } from '@/components/common/LoadingSpinner'
+import { useAuthStore } from '@/stores/auth-store'
+import { GuestBlock } from '@/components/common/GuestBlock'
 
 const DEFAULT_EMERGENCY_NUMBER = '112'
 
@@ -15,11 +17,17 @@ export default function EmergencyPage() {
   const isOnline = useOnlineStatus()
   const [confirmingEmergency, setConfirmingEmergency] = useState(false)
   const [confirmingContact, setConfirmingContact] = useState<{ name: string; phone: string } | null>(null)
+  const { userRole } = useAuthStore()
 
   const { data: contactsData, isLoading } = useQuery({
     queryKey: ['emergencyContacts'],
     queryFn: () => authApi.getEmergencyContacts(),
+    enabled: userRole !== 'GUEST',
   })
+
+  if (userRole === 'GUEST') {
+    return <GuestBlock featureName="Emergency Center" icon="🚨" />
+  }
 
   const contacts = contactsData?.data || []
   const doctorContact = contacts.find(c => c.relationship_type === 'HEALTHCARE_PROVIDER')

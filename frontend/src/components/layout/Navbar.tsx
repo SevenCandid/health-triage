@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useTheme } from '@/hooks/use-theme'
 import { useNetworkStore } from '@/stores/network-store'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/Button'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
@@ -16,7 +17,7 @@ const navItems = [
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { isAuthenticated, clearAuth } = useAuthStore()
+  const { isAuthenticated, clearAuth, userRole } = useAuthStore()
   const { resolvedTheme, setTheme } = useTheme()
   const isOnline = useNetworkStore((s) => s.isOnline)
   const navigate = useNavigate()
@@ -27,6 +28,11 @@ export function Navbar() {
     clearAuth()
     navigate('/login')
   }
+
+  const isGuest = userRole === 'GUEST'
+  const activeItems = isGuest
+    ? navItems.filter(item => item.to === '/dashboard' || item.to === '/assessment')
+    : navItems
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
@@ -40,7 +46,7 @@ export function Navbar() {
         {/* Desktop Nav */}
         {isAuthenticated && (
           <ul className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => (
+            {activeItems.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
@@ -77,13 +83,13 @@ export function Navbar() {
             id="navbar-theme-toggle"
             onClick={toggleTheme}
             aria-label="Toggle dark mode"
-            className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+            className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground mr-1"
           >
             {resolvedTheme === 'dark' ? '☀️' : '🌙'}
           </button>
 
-          {/* Logout / Login */}
-          {isAuthenticated ? (
+          {/* Auth Controls */}
+          {isAuthenticated && !isGuest ? (
             <button
               id="navbar-logout-btn"
               onClick={handleLogout}
@@ -92,12 +98,23 @@ export function Navbar() {
               Logout
             </button>
           ) : (
-            <NavLink
-              to="/login"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            >
-              Login
-            </NavLink>
+            <div className="hidden sm:flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-8 font-semibold"
+                onClick={() => { clearAuth(); navigate('/login') }}
+              >
+                Sign In
+              </Button>
+              <Button
+                size="sm"
+                className="text-xs h-8 font-bold"
+                onClick={() => { clearAuth(); navigate('/register') }}
+              >
+                Sign Up
+              </Button>
+            </div>
           )}
 
           {/* Mobile Hamburger */}
@@ -124,7 +141,7 @@ export function Navbar() {
             className="overflow-hidden border-t border-border bg-background md:hidden"
           >
             <ul className="flex flex-col gap-1 p-4">
-              {navItems.map((item) => (
+              {activeItems.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
@@ -143,14 +160,32 @@ export function Navbar() {
                   </NavLink>
                 </li>
               ))}
-              <li>
-                <button
-                  onClick={() => { handleLogout(); setMenuOpen(false) }}
-                  className="w-full text-left flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent"
-                >
-                  <span>🚪</span> Logout
-                </button>
-              </li>
+              {isGuest ? (
+                <li className="grid grid-cols-2 gap-2 pt-2 border-t border-border mt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { clearAuth(); setMenuOpen(false); navigate('/login') }}
+                    className="w-full text-xs font-semibold py-2.5"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    onClick={() => { clearAuth(); setMenuOpen(false); navigate('/register') }}
+                    className="w-full text-xs font-bold py-2.5"
+                  >
+                    Sign Up
+                  </Button>
+                </li>
+              ) : (
+                <li>
+                  <button
+                    onClick={() => { handleLogout(); setMenuOpen(false) }}
+                    className="w-full text-left flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent"
+                  >
+                    <span>🚪</span> Logout
+                  </button>
+                </li>
+              )}
             </ul>
           </motion.div>
         )}

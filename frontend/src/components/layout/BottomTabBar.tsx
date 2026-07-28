@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 const tabItems = [
   { to: '/dashboard', label: 'Home', icon: '🏠' },
@@ -16,6 +17,12 @@ const tabItems = [
  */
 export function BottomTabBar() {
   const { pathname } = useLocation()
+  const { userRole } = useAuthStore()
+
+  const isGuest = userRole === 'GUEST'
+  const activeTabs = isGuest
+    ? tabItems.filter(item => item.to === '/dashboard' || item.to === '/assessment')
+    : tabItems
 
   return (
     <nav
@@ -23,7 +30,7 @@ export function BottomTabBar() {
       aria-label="Mobile navigation"
     >
       <ul className="flex items-center">
-        {tabItems.map((item) => {
+        {activeTabs.map((item) => {
           const isActive = pathname.startsWith(item.to)
           return (
             <li key={item.to} className="flex-1">

@@ -11,9 +11,13 @@ import { VoiceWave, type VoiceState } from '../components/VoiceWave'
 // Polyfill for vendor prefixes — cast to any since TypeScript's Window type may lag browser support
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
+import { useAuthStore } from '@/stores/auth-store'
+import { GuestBlock } from '@/components/common/GuestBlock'
+
 export default function VoicePage() {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { userRole } = useAuthStore()
   
   const {
     sessionId,
@@ -24,6 +28,10 @@ export default function VoicePage() {
   } = useAssessmentStore()
   
   const { preferredVoiceURI } = useSettingsStore()
+
+  if (userRole === 'GUEST') {
+    return <GuestBlock featureName="Voice Consultation" icon="🎙️" />
+  }
 
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE')
   const [transcriptText, setTranscriptText] = useState('')
