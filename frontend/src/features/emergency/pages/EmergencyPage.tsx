@@ -1,28 +1,49 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
-import { authApi } from '@/services/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { authApi, profileApi } from '@/services/api'
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Input } from '@/components/ui/Input'
 import { PageLoader } from '@/components/common/LoadingSpinner'
 import { useAuthStore } from '@/stores/auth-store'
 import { GuestBlock } from '@/components/common/GuestBlock'
 
 const DEFAULT_EMERGENCY_NUMBER = '112'
 
+type AddContactMode = 'HEALTHCARE_PROVIDER' | 'FAMILY' | null
+
 export default function EmergencyPage() {
   const navigate = useNavigate()
   const isOnline = useOnlineStatus()
+  const queryClient = useQueryClient()
   const [confirmingEmergency, setConfirmingEmergency] = useState(false)
   const [confirmingContact, setConfirmingContact] = useState<{ name: string; phone: string } | null>(null)
+  const [addMode, setAddMode] = useState<AddContactMode>(null)
+  const [form, setForm] = useState({ name: '', phone: '' })
   const { userRole } = useAuthStore()
 
   const { data: contactsData, isLoading } = useQuery({
     queryKey: ['emergencyContacts'],
     queryFn: () => authApi.getEmergencyContacts(),
     enabled: userRole !== 'GUEST',
+  })
+
+  const addContactMutation = useMutation({
+    mutationFn: () =>
+      profileApi.addEmergencyContact({
+        contact_name: form.name.trim(),
+        phone_number: form.phone.trim(),
+        relationship_type: addMode!,
+        is_primary: addMode === 'FAMILY',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emergencyContacts'] })
+      setAddMode(null)
+      setForm({ name: '', phone: '' })
+    },
   })
 
   if (userRole === 'GUEST') {
@@ -111,7 +132,7 @@ export default function EmergencyPage() {
             </button>
           ) : (
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => setAddMode('HEALTHCARE_PROVIDER')}
               className="w-full border border-dashed border-border text-muted-foreground text-xs rounded-lg py-2 hover:bg-accent transition-all"
             >
               + Add Doctor
@@ -139,7 +160,7 @@ export default function EmergencyPage() {
             </button>
           ) : (
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => setAddMode('FAMILY')}
               className="w-full border border-dashed border-border text-muted-foreground text-xs rounded-lg py-2 hover:bg-accent transition-all"
             >
               + Add Contact
@@ -173,6 +194,63 @@ export default function EmergencyPage() {
 
       {/* Confirmation Modals */}
       <AnimatePresence>
+
+        {/* Add Contact Modal */}
+        {addMode && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl border border-border"
+            >
+              <div className="space-y-4">
+                <div className="text-center">
+                  <span className="text-3xl block mb-1">{addMode === 'HEALTHCARE_PROVIDER' ? '👨‍⚕️' : '👤'}</span>
+                  <h2 className="text-base font-bold text-foreground">
+                    {addMode === 'HEALTHCARE_PROVIDER' ? 'Add Your Doctor' : 'Add Emergency Contact'}
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">This contact can be called quickly in an emergency.</p>
+                </div>
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="text-xs font-medium text-foreground block mb-1">Full Name</label>
+                    <Input
+                      placeholder={addMode === 'HEALTHCARE_PROVIDER' ? 'Dr. Ama Owusu' : 'Jane Doe'}
+                      value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      className="h-10 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground block mb-1">Phone Number</label>
+                    <Input
+                      type="tel"
+                      placeholder="+233 XX XXX XXXX"
+                      value={form.phone}
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      className="h-10 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Button
+                    className="w-full"
+                    disabled={!form.name.trim() || !form.phone.trim() || addContactMutation.isPending}
+                    onClick={() => addContactMutation.mutate()}
+                  >
+                    {addContactMutation.isPending ? 'Saving…' : 'Save Contact'}
+                  </Button>
+                  <Button variant="outline" className="w-full" onClick={() => { setAddMode(null); setForm({ name: '', phone: '' }) }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
         {confirmingEmergency && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
