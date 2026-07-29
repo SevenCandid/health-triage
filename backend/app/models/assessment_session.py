@@ -34,6 +34,7 @@ class SessionStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"    # Legacy status for active sessions
     ACTIVE = "ACTIVE"              # Questions still being answered / Active conversation
     COMPLETED = "COMPLETED"        # Full evaluation completed
+    ABANDONED = "ABANDONED"        # Legacy status for abandoned sessions
     ARCHIVED = "ARCHIVED"          # User closed before completion or manually archived
     SYNCED = "SYNCED"              # Offline session synced to server
 
