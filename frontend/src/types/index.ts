@@ -140,7 +140,7 @@ export interface HealthProfile {
 export interface AssessmentSession {
   id: string
   title?: string
-  status: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'SYNCED'
+  status: 'ACTIVE' | 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED' | 'SYNCED'
   severity_level_id?: string | null
   severity_code?: string | null
   consultation_mode?: string | null

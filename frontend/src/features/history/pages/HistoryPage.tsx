@@ -120,7 +120,6 @@ export default function HistoryPage() {
           <div className="divide-y divide-border">
             {filtered.map((session, i) => {
               const date = new Date(session.created_at)
-              const statusStyle = STATUS_STYLE[session.status] ?? STATUS_STYLE.ABANDONED
               const emoji = STATUS_EMOJI[session.status] ?? '🩺'
               return (
                 <motion.div
