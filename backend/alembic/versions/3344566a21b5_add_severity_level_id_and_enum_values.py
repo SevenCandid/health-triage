@@ -23,13 +23,8 @@ def upgrade() -> None:
         batch_op.create_foreign_key('fk_assessment_sessions_severity_id', 'severity_levels', ['severity_level_id'], ['id'], ondelete='SET NULL')
         batch_op.create_index(batch_op.f('ix_assessment_sessions_severity_level_id'), ['severity_level_id'], unique=False)
 
-    # Add new values to Enum if PostgreSQL
-    bind = op.get_bind()
-    if bind.engine.name == 'postgresql':
-        op.execute("COMMIT")
-        op.execute("ALTER TYPE session_status_enum ADD VALUE IF NOT EXISTS 'ARCHIVED'")
-        op.execute("ALTER TYPE session_status_enum ADD VALUE IF NOT EXISTS 'SYNCED'")
-        op.execute("BEGIN")
+    # Enum updates moved to main.py startup to bypass asyncpg transaction limitations
+    pass
 
 
 def downgrade() -> None:

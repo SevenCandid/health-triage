@@ -96,6 +96,22 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         async with async_session_factory() as session:
             await run_seeds(session)
 
+    # Always ensure PostgreSQL ENUMs are up to date on startup
+    # We do this here outside of Alembic to bypass 'ALTER TYPE cannot run in transaction'
+    try:
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            autocommit_conn = await conn.execution_options(isolation_level="AUTOCOMMIT")
+            if autocommit_conn.dialect.name == "postgresql":
+                logger.info("Ensuring PostgreSQL Enum values exist...")
+                for val in ['ACTIVE', 'ARCHIVED', 'SYNCED']:
+                    try:
+                        await autocommit_conn.execute(text(f"ALTER TYPE session_status_enum ADD VALUE IF NOT EXISTS '{val}'"))
+                    except Exception as e:
+                        logger.warning(f"Enum update for {val} failed (might already exist or PG < 12): {e}")
+    except Exception as e:
+        logger.error(f"Failed to update PostgreSQL enums on startup: {e}")
+
     logger.info("Application startup complete. Ready to accept requests.")
 
     yield  # Application serves requests here
