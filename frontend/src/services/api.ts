@@ -32,7 +32,15 @@ export const authApi = {
     
   logout: () => apiClient.post('/auth/logout'),
 
-  getProfile: () => apiClient.get<UserProfile>('/auth/me'),
+  getProfile: async () => {
+    if (!useNetworkStore.getState().isOnline) {
+      const profile = await dbService.getAuthSession()
+      return { data: profile } as any
+    }
+    const response = await apiClient.get<UserProfile>('/auth/me')
+    await dbService.saveAuthSession(response.data)
+    return response
+  },
 
   updateProfile: (data: Partial<UserProfile>) =>
     apiClient.put<UserProfile>('/auth/me', data),
@@ -44,8 +52,15 @@ export const authApi = {
 // ── Profile API ───────────────────────────────────────────────────────────────
 
 export const profileApi = {
-  getProfile: () =>
-    apiClient.get<HealthProfile>('/users/me/profile'),
+  getProfile: async () => {
+    if (!useNetworkStore.getState().isOnline) {
+      const profile = await dbService.getProfile()
+      return { data: profile } as any
+    }
+    const response = await apiClient.get<HealthProfile>('/users/me/profile')
+    await dbService.saveProfile(response.data)
+    return response
+  },
 
   upsertProfile: (data: Partial<HealthProfile>) =>
     apiClient.put<HealthProfile>('/users/me/profile', data),
@@ -59,16 +74,38 @@ export const profileApi = {
 
 // ── Assessment API ────────────────────────────────────────────────────────────
 
+import { useNetworkStore } from '../stores/useNetworkStore'
+import { ClientTriageService } from '../features/assessment/services/ClientTriageService'
+import { dbService } from './DatabaseService'
+
 export const assessmentApi = {
-  start: (mode: 'TEXT' | 'VOICE' = 'TEXT') =>
-    apiClient.post<StartAssessmentResponse>('/assessment/start', {
+  start: async (mode: 'TEXT' | 'VOICE' = 'TEXT') => {
+    if (!useNetworkStore.getState().isOnline) {
+      // Offline fallback: dummy primary symptom until user submits
+      const result = await ClientTriageService.startConversation('Offline Start', 'en')
+      // Simulate axios response wrapper
+      return { data: result } as any
+    }
+    return apiClient.post<StartAssessmentResponse>('/assessment/start', {
       language_code: 'en',
       consultation_mode: mode,
       created_offline: false,
-    }),
+    })
+  },
 
-  submitSymptoms: (sessionId: string, symptoms: string[], userText?: string) => {
+  submitSymptoms: async (sessionId: string, symptoms: string[], userText?: string) => {
     const slug = symptoms[0] ? symptoms[0].toLowerCase().replace(/\s+/g, '-') : 'unknown';
+    if (!useNetworkStore.getState().isOnline) {
+      // Offline: we need to update the conversation's primary symptom
+      const conv = await dbService.getConversation(sessionId)
+      if (conv) {
+        conv.primary_symptom = symptoms[0] || 'unknown'
+        await dbService.saveConversation(conv)
+      }
+      // Re-evaluate to get first question
+      const result = await ClientTriageService.answerQuestion(sessionId, '__symptom_submit', null)
+      return { data: result } as any
+    }
     return apiClient.post<SymptomsSubmitResponse>('/assessment/symptoms', {
       session_id: sessionId,
       symptom_slug: slug,
@@ -76,12 +113,17 @@ export const assessmentApi = {
     });
   },
 
-  submitAnswer: (sessionId: string, questionId: string, answer: string | string[]) =>
-    apiClient.post<AnswerSubmitResponse>('/assessment/answer', {
+  submitAnswer: async (sessionId: string, questionId: string, answer: string | string[]) => {
+    if (!useNetworkStore.getState().isOnline) {
+      const result = await ClientTriageService.answerQuestion(sessionId, questionId, Array.isArray(answer) ? answer.join(',') : answer)
+      return { data: result } as any
+    }
+    return apiClient.post<AnswerSubmitResponse>('/assessment/answer', {
       session_id: sessionId,
       node_id: questionId,
       answer_value: Array.isArray(answer) ? answer.join(',') : answer,
-    }),
+    })
+  },
 
   resolveSession: (sessionId: string) =>
     apiClient.post(`/assessment/${sessionId}/resolve`),

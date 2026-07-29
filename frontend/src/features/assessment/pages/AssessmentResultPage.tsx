@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { assessmentApi } from '@/services/api'
 import { useAssessmentStore } from '@/stores/assessment-store'
+import { useNetworkStore } from '@/stores/network-store'
 import { PageLoader } from '@/components/common/LoadingSpinner'
 import { Button } from '@/components/ui/Button'
 import { useAuthStore } from '@/stores/auth-store'
@@ -207,6 +208,8 @@ export default function AssessmentResultPage() {
         .slice(0, 5)
     : []
 
+  const isOnline = useNetworkStore(s => s.isOnline)
+
   return (
     <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-4">
 
@@ -214,6 +217,17 @@ export default function AssessmentResultPage() {
       <Section delay={0}>
         <AssessmentNotice />
       </Section>
+
+      {!isOnline && (
+        <Section delay={0.02}>
+          <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
+            <p className="text-sm text-amber-700 dark:text-amber-400 font-medium flex items-center gap-2">
+              <span className="text-lg">⚡</span>
+              Offline Mode Active: Your assessment was processed locally. AI insights will be generated when you reconnect.
+            </p>
+          </div>
+        </Section>
+      )}
 
       {/* ── Hero Completion Status ─────────────────────────────── */}
       <Section delay={0.05}>

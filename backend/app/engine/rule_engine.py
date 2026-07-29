@@ -169,7 +169,7 @@ class RuleEngine:
                 final_severity = severity
 
         if not explanations:
-            explanations.append("Symptom evaluation completed.")
+            explanations.append("Your responses indicate signs that warrant the chosen recommendation to ensure proper health management.")
 
         # 3. Recommendations
         for concern_id in concern_ids:

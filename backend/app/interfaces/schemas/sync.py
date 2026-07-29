@@ -39,3 +39,14 @@ class OutboxSyncResponse(BaseModel):
     processed_count: int
     synced_ids: List[SyncedIdPair]
     errors: List[str] = Field(default_factory=list)
+
+
+class KnowledgeSyncResponse(BaseModel):
+    """Full database export of medical knowledge for offline triage."""
+
+    rule_set_version: str
+    symptoms: List[Dict[str, Any]]
+    questions: List[Dict[str, Any]]
+    triage_rules: List[Dict[str, Any]]
+    recommendations: List[Dict[str, Any]]
+
