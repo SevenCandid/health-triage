@@ -10,12 +10,6 @@ import type { AssessmentSession } from '@/types'
 import { useAuthStore } from '@/stores/auth-store'
 import { GuestBlock } from '@/components/common/GuestBlock'
 
-const STATUS_STYLE: Record<string, string> = {
-  COMPLETED: 'bg-green-500/10 text-green-600 border-green-500/20',
-  ACTIVE: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  ARCHIVED: 'bg-muted/60 text-muted-foreground border-border',
-  SYNCED: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-}
 
 const STATUS_EMOJI: Record<string, string> = {
   COMPLETED: '✅',
