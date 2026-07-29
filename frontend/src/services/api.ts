@@ -78,51 +78,81 @@ import { useNetworkStore } from '../stores/network-store'
 import { ClientTriageService } from '../features/assessment/services/ClientTriageService'
 import { dbService } from './DatabaseService'
 
-export const assessmentApi = {
   start: async (mode: 'TEXT' | 'VOICE' = 'TEXT') => {
-    if (!useNetworkStore.getState().isOnline) {
-      // Offline fallback: dummy primary symptom until user submits
+    const doOffline = async () => {
       const result = await ClientTriageService.startConversation('Offline Start', 'en')
-      // Simulate axios response wrapper
       return { data: result } as any
     }
-    return apiClient.post<StartAssessmentResponse>('/assessment/start', {
-      language_code: 'en',
-      consultation_mode: mode,
-      created_offline: false,
-    })
+    if (!useNetworkStore.getState().isOnline) {
+      return doOffline()
+    }
+    try {
+      return await apiClient.post<StartAssessmentResponse>('/assessment/start', {
+        language_code: 'en',
+        consultation_mode: mode,
+        created_offline: false,
+      })
+    } catch (e: any) {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+        useNetworkStore.getState().setOnline(false)
+        return doOffline()
+      }
+      throw e
+    }
   },
 
   submitSymptoms: async (sessionId: string, symptoms: string[], userText?: string) => {
     const slug = symptoms[0] ? symptoms[0].toLowerCase().replace(/\s+/g, '-') : 'unknown';
-    if (!useNetworkStore.getState().isOnline) {
-      // Offline: we need to update the conversation's primary symptom
+    const doOffline = async () => {
       const conv = await dbService.getConversation(sessionId)
       if (conv) {
         conv.primary_symptom = symptoms[0] || 'unknown'
         await dbService.saveConversation(conv)
       }
-      // Re-evaluate to get first question
       const result = await ClientTriageService.answerQuestion(sessionId, '__symptom_submit', null)
       return { data: result } as any
     }
-    return apiClient.post<SymptomsSubmitResponse>('/assessment/symptoms', {
-      session_id: sessionId,
-      symptom_slug: slug,
-      user_text: userText || symptoms[0],
-    });
+
+    if (!useNetworkStore.getState().isOnline) {
+      return doOffline()
+    }
+    try {
+      return await apiClient.post<SymptomsSubmitResponse>('/assessment/symptoms', {
+        session_id: sessionId,
+        symptom_slug: slug,
+        user_text: userText || symptoms[0],
+      });
+    } catch (e: any) {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+        useNetworkStore.getState().setOnline(false)
+        return doOffline()
+      }
+      throw e
+    }
   },
 
   submitAnswer: async (sessionId: string, questionId: string, answer: string | string[]) => {
-    if (!useNetworkStore.getState().isOnline) {
+    const doOffline = async () => {
       const result = await ClientTriageService.answerQuestion(sessionId, questionId, Array.isArray(answer) ? answer.join(',') : answer)
       return { data: result } as any
     }
-    return apiClient.post<AnswerSubmitResponse>('/assessment/answer', {
-      session_id: sessionId,
-      node_id: questionId,
-      answer_value: Array.isArray(answer) ? answer.join(',') : answer,
-    })
+
+    if (!useNetworkStore.getState().isOnline) {
+      return doOffline()
+    }
+    try {
+      return await apiClient.post<AnswerSubmitResponse>('/assessment/answer', {
+        session_id: sessionId,
+        node_id: questionId,
+        answer_value: Array.isArray(answer) ? answer.join(',') : answer,
+      })
+    } catch (e: any) {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+        useNetworkStore.getState().setOnline(false)
+        return doOffline()
+      }
+      throw e
+    }
   },
 
   resolveSession: (sessionId: string) =>
