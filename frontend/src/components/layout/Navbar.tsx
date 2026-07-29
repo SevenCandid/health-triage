@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/use-theme'
 import { useNetworkStore } from '@/stores/network-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { usePWAInstall } from '@/hooks/use-pwa-install'
 
 const navItems = [
   { to: '/dashboard', label: 'Assess', icon: '🏠' },
@@ -22,6 +23,7 @@ export function Navbar() {
   const { resolvedTheme, setTheme } = useTheme()
   const isOnline = useNetworkStore((s) => s.isOnline)
   const navigate = useNavigate()
+  const { isInstallable, promptInstall } = usePWAInstall()
 
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
 
@@ -70,6 +72,18 @@ export function Navbar() {
 
         {/* Right Controls */}
         <div className="flex items-center gap-2">
+          {/* Install Button (Desktop) */}
+          {isInstallable && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={promptInstall}
+              className="hidden sm:flex text-xs h-8 font-semibold gap-1.5 border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
+            >
+              <span>📱</span> Install App
+            </Button>
+          )}
+
           {/* Online Dot */}
           <span
             title={isOnline ? 'Online' : 'Offline'}
@@ -142,6 +156,17 @@ export function Navbar() {
             className="overflow-hidden border-t border-border bg-background md:hidden"
           >
             <ul className="flex flex-col gap-1 p-4">
+              {isInstallable && (
+                <li className="pt-1 border-b border-border/50 pb-2 mb-1">
+                  <Button
+                    variant="outline"
+                    onClick={() => { promptInstall(); setMenuOpen(false); }}
+                    className="w-full text-xs font-semibold py-2.5 flex items-center justify-center gap-2 border-primary/20 text-primary bg-primary/5"
+                  >
+                    <span>📱</span> Install Triage App
+                  </Button>
+                </li>
+              )}
               {activeItems.map((item) => (
                 <li key={item.to}>
                   <NavLink
