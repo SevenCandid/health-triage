@@ -24,7 +24,7 @@ export function RootLayout() {
   useTheme()
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex h-[100dvh] flex-col bg-background overflow-hidden">
       <OfflineBanner />
       <Navbar />
       <InstallNotice />
