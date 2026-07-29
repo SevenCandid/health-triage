@@ -43,6 +43,7 @@
   ],
   "shortness-of-breath": [
     "can't breathe well",
+    "can't breathe properly",
     "hard to breathe",
     "short of breath",
     "tight chest breathing",
@@ -58,12 +59,14 @@
     "belly ache",
     "stomach pain",
     "tummy ache",
+    "my tummy hurts",
     "pain in my belly",
     "stomach cramping",
     "stomach cramps"
   ],
   "nausea-vomiting": [
     "throwing up",
+    "i threw up",
     "feel like vomiting",
     "feeling nauseous",
     "vomiting",
@@ -95,7 +98,8 @@
     "spinning head",
     "giddiness",
     "lightheaded",
-    "head is spinning"
+    "head is spinning",
+    "want to faint"
   ],
   "rash": [
     "skin rash",

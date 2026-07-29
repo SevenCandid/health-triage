@@ -7,12 +7,15 @@ import { useSettingsStore } from '@/stores/settings-store'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/Button'
 import { VoiceWave, type VoiceState } from '../components/VoiceWave'
+import { parseVoiceCommand } from '@/lib/voice-commands'
+import { getRandomPrompt } from '@/lib/conversations'
 
-// Polyfill for vendor prefixes — cast to any since TypeScript's Window type may lag browser support
+// Polyfill for vendor prefixes
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
 
 import { useAuthStore } from '@/stores/auth-store'
 import { GuestBlock } from '@/components/common/GuestBlock'
+import { AssessmentNotice } from '@/features/assessment/components/AssessmentNotice'
 
 export default function VoicePage() {
   const navigate = useNavigate()
@@ -24,7 +27,9 @@ export default function VoicePage() {
     startSession,
     setCurrentQuestion,
     completeSession,
-    resetSession
+    resetSession,
+    resumeSession,
+    isComplete
   } = useAssessmentStore()
   
   const { preferredVoiceURI } = useSettingsStore()
@@ -36,10 +41,13 @@ export default function VoicePage() {
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE')
   const [transcriptText, setTranscriptText] = useState('')
   const [systemMessage, setSystemMessage] = useState('')
+  const [hasReadNotice, setHasReadNotice] = useState(false)
+  const [showAssessmentNotice, setShowAssessmentNotice] = useState(false)
   
   // Refs to manage native API instances
   const recognitionRef = useRef<any>(null)
   const isComponentMounted = useRef(true)
+  const speechRate = useRef(1)
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -79,7 +87,6 @@ export default function VoicePage() {
       }
 
       recognition.onend = () => {
-        // If we were listening and it ended without final result, go idle
         setVoiceState(prev => prev === 'LISTENING' ? 'IDLE' : prev)
       }
 
@@ -106,6 +113,7 @@ export default function VoicePage() {
     setSystemMessage(text)
 
     const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = speechRate.current
     
     // Apply preferred voice if exists
     if (preferredVoiceURI) {
@@ -134,7 +142,20 @@ export default function VoicePage() {
     mutationFn: () => assessmentApi.start('VOICE'),
     onSuccess: (res) => {
       startSession(res.data.session_id)
-      const intro = "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+      
+      let intro = ""
+      if (!hasReadNotice) {
+        setShowAssessmentNotice(true)
+        intro += "Health Guidance Notice. This assessment provides health guidance based on the information you share. It is not a medical diagnosis and does not replace care from a qualified healthcare professional. "
+        setHasReadNotice(true)
+      }
+
+      if (res.data.pending_symptom) {
+        intro += `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+      } else {
+        intro += "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+      }
+      
       speakText(intro, () => {
         startListening()
       })
@@ -145,11 +166,36 @@ export default function VoicePage() {
     }
   })
 
-  // Start fresh session on mount
+  // Start fresh session or resume on mount
   useEffect(() => {
-    resetSession()
-    setVoiceState('PROCESSING')
-    startMutation.mutate()
+    const queryParams = new URLSearchParams(window.location.search)
+    const isResuming = queryParams.get('resume') === 'true'
+
+    if (isResuming && sessionId && !isComplete) {
+      resumeSession()
+      setVoiceState('PROCESSING')
+      // If we're resuming a session, get the transcript to figure out where we are.
+      assessmentApi.getConversationTranscript(sessionId)
+        .then(res => {
+          const msgs = res.data.messages
+          if (msgs.length > 0) {
+            const lastMsg = msgs[msgs.length - 1]
+            if (lastMsg.role === 'SYSTEM') {
+              speakText(lastMsg.content, () => startListening())
+            } else {
+               speakText("I'm ready to continue.", () => startListening())
+            }
+          }
+        })
+        .catch(() => {
+          resetSession()
+          startMutation.mutate()
+        })
+    } else {
+      resetSession()
+      setVoiceState('PROCESSING')
+      startMutation.mutate()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -158,15 +204,25 @@ export default function VoicePage() {
     mutationFn: ({ sid, symptoms }: { sid: string; symptoms: string[] }) =>
       assessmentApi.submitSymptoms(sid, symptoms),
     onSuccess: (res) => {
-      if (res.data.is_completed) {
+      if (res.data.is_emergency) {
+        speakText("I'm concerned about what you've shared. I'm going to ask a few important questions so I can provide the safest guidance.", () => {
+           if (res.data.next_question) {
+              setCurrentQuestion(res.data.next_question)
+              askQuestion(res.data.next_question.question_text_en)
+           }
+        })
+      } else if (res.data.is_completed) {
         handleCompletion()
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
         askQuestion(res.data.next_question.question_text_en)
+      } else {
+         // No next question, meaning it's ready for assessment generation.
+         speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
       }
     },
     onError: () => {
-      speakText("I couldn't find that symptom. Could you please rephrase it?", () => {
+      speakText("I couldn't quite understand that symptom. Could you please rephrase it?", () => {
         startListening()
       })
     }
@@ -178,10 +234,12 @@ export default function VoicePage() {
       assessmentApi.submitAnswer(sid, nodeId, answerText),
     onSuccess: (res) => {
       if (res.data.is_completed) {
-        handleCompletion()
+        speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
-        askQuestion(res.data.next_question.question_text_en)
+        // Add a conversational transition before the next question
+        const transition = getRandomPrompt('transitions')
+        speakText(`${transition}. ${res.data.next_question.question_text_en}`, () => startListening())
       }
     },
     onError: () => {
@@ -190,11 +248,29 @@ export default function VoicePage() {
       })
     }
   })
+  
+  // 4. Get Assessment Result Mutation
+  const resultMutation = useMutation({
+      mutationFn: (sid: string) => assessmentApi.getResult(sid),
+      onSuccess: (res) => {
+         const result = res.data
+         let resultText = `Assessment Summary. ${result.explanation}. `
+         if (result.recommendations && result.recommendations.length > 0) {
+             resultText += `Recommended next steps: ${result.recommendations.join(', ')}. `
+         }
+         resultText += "Is there anything else you'd like to discuss today?"
+         
+         speakText(resultText, () => startListening())
+      },
+      onError: () => {
+          speakText("I'm sorry, I encountered an error while generating your assessment. Please open the results page manually.", () => navigate(`/assessment/${sessionId}/result`))
+      }
+  })
 
   const handleCompletion = () => {
     completeSession()
-    speakText("Assessment complete. I'm taking you to your results now.", () => {
-      navigate(`/assessment/${sessionId}/result`)
+    speakText("I'm generating your assessment now...", () => {
+        if (sessionId) resultMutation.mutate(sessionId)
     })
   }
 
@@ -223,16 +299,114 @@ export default function VoicePage() {
     }
   }
 
+  const executeCommand = (command: string) => {
+      switch (command) {
+          case 'CONVERSATION_CONTINUE':
+             if (useAssessmentStore.getState().currentQuestion) {
+                 speakText("Please answer the last question.", () => startListening())
+             } else {
+                 handleCompletion()
+             }
+             break;
+          case 'CONVERSATION_FINISH':
+             handleCompletion()
+             break;
+          case 'CONVERSATION_START_OVER':
+             resetSession()
+             startMutation.mutate()
+             break;
+          case 'CONVERSATION_CANCEL':
+             handleEndTriage()
+             break;
+          case 'SPEECH_STOP':
+          case 'SPEECH_PAUSE':
+             window.speechSynthesis.cancel()
+             setVoiceState('IDLE')
+             break;
+          case 'SPEECH_RESUME':
+             startListening()
+             break;
+          case 'SPEECH_REPEAT':
+             speakText(systemMessage, () => startListening())
+             break;
+          case 'SPEECH_SLOWER':
+             speechRate.current = Math.max(0.5, speechRate.current - 0.25)
+             speakText("I will speak slower. " + systemMessage, () => startListening())
+             break;
+          case 'SPEECH_FASTER':
+             speechRate.current = Math.min(2.0, speechRate.current + 0.25)
+             speakText("I will speak faster. " + systemMessage, () => startListening())
+             break;
+          case 'NAV_BACK':
+             navigate(-1)
+             break;
+          case 'NAV_NEXT':
+          case 'NAV_RESULTS':
+             if (sessionId) navigate(`/assessment/${sessionId}/result`)
+             break;
+          case 'NAV_HISTORY':
+             navigate('/history')
+             break;
+          case 'NAV_EMERGENCY':
+             navigate('/emergency')
+             break;
+          case 'NAV_PROFILE':
+             navigate('/profile')
+             break;
+          case 'NAV_SETTINGS':
+             navigate('/settings')
+             break;
+          case 'HELP':
+             speakText("You can say commands like 'repeat that', 'stop speaking', 'go back', 'open results', or 'finish assessment'.", () => startListening())
+             break;
+      }
+  }
+
   const handleUserUtterance = (text: string) => {
     stopListening()
+    
+    // Intercept Voice Commands
+    const command = parseVoiceCommand(text)
+    if (command) {
+        executeCommand(command)
+        return
+    }
+
     setVoiceState('PROCESSING')
-    // Read sessionId FRESH from the store at call-time to avoid stale closure
     const sid = useAssessmentStore.getState().sessionId
     const question = useAssessmentStore.getState().currentQuestion
+    const completed = useAssessmentStore.getState().isComplete
 
     if (!sid) {
       speakText('Session not ready yet. Please wait a moment and try again.', () => startListening())
       return
+    }
+    
+    const lowerText = text.toLowerCase().replace(/[^\w\s]/g, '').trim()
+    
+    if (completed) {
+        if (lowerText === 'no' || lowerText === 'nope' || lowerText.includes('nothing')) {
+            handleEndTriage()
+        } else if (lowerText === 'yes' || lowerText.includes('yes') || lowerText.includes('more')) {
+            // Start a new session seamlessly
+            resetSession()
+            startMutation.mutate()
+        } else {
+           speakText("I didn't quite catch that. Would you like to discuss anything else?", () => startListening())
+        }
+        return
+    }
+    
+    // Check for confirmations to "I think I have enough information..."
+    if (!question) {
+        if (lowerText === 'yes' || lowerText === 'yeah' || lowerText === 'no' || lowerText === 'nope' || lowerText.includes('no more') || lowerText.includes('thats all')) {
+             if (lowerText === 'yes' || lowerText === 'yeah') {
+                 speakText("Okay, please tell me what else you're experiencing.", () => startListening())
+             } else {
+                 handleCompletion()
+             }
+             return
+        }
     }
 
     if (!question) {
@@ -253,10 +427,16 @@ export default function VoicePage() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center p-6 text-center">
+    <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center p-6 text-center relative">
       
+      {showAssessmentNotice && (
+         <div className="absolute top-4 left-4 right-4 z-10">
+             <AssessmentNotice />
+         </div>
+      )}
+
       {/* Dynamic System Message */}
-      <div className="mb-12 min-h-[4rem]">
+      <div className="mb-12 min-h-[4rem] mt-16">
         {voiceState === 'SPEAKING' && (
           <h2 className="text-2xl font-semibold text-foreground animate-pulse">
             {systemMessage}
