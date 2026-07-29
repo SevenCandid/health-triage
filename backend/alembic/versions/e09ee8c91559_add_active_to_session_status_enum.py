@@ -20,7 +20,9 @@ def upgrade() -> None:
     # Add ACTIVE to Enum if PostgreSQL
     bind = op.get_bind()
     if bind.engine.name == 'postgresql':
+        op.execute("COMMIT")
         op.execute("ALTER TYPE session_status_enum ADD VALUE IF NOT EXISTS 'ACTIVE'")
+        op.execute("BEGIN")
 
 
 def downgrade() -> None:
