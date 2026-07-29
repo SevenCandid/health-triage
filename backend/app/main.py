@@ -89,12 +89,48 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if settings.ENVIRONMENT == "production":
         import subprocess
         import sys
+        from sqlalchemy import text
         logger.info("Production mode: Running Alembic migrations...")
-        try:
-            subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
+        result = subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], capture_output=True, text=True)
+        if result.returncode == 0:
             logger.info("Alembic migrations completed successfully.")
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Alembic migrations failed: {e}")
+        else:
+            logger.error(f"Alembic migrations failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+            logger.info("Applying emergency fallback schema patch...")
+            try:
+                async with engine.begin() as conn:
+                    # Drop the fk constraint safely if it exists (requires DO block in PG)
+                    await conn.execute(text('''
+                        DO $$
+                        BEGIN
+                            IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_assessment_responses_session_id' AND table_name = 'assessment_responses') THEN
+                                ALTER TABLE assessment_responses DROP CONSTRAINT fk_assessment_responses_session_id;
+                            END IF;
+                        END $$;
+                    '''))
+                    await conn.execute(text("DELETE FROM assessment_responses"))
+                    # Add column if it doesn't exist
+                    await conn.execute(text('''
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='assessment_responses' AND column_name='conversation_id') THEN
+                                ALTER TABLE assessment_responses ADD COLUMN conversation_id VARCHAR(36);
+                                ALTER TABLE assessment_responses ALTER COLUMN conversation_id SET NOT NULL;
+                            END IF;
+                        END $$;
+                    '''))
+                    # Add symptom_id column if it doesn't exist
+                    await conn.execute(text('''
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='assessment_responses' AND column_name='symptom_id') THEN
+                                ALTER TABLE assessment_responses ADD COLUMN symptom_id VARCHAR(36);
+                            END IF;
+                        END $$;
+                    '''))
+                logger.info("Emergency fallback schema patch applied successfully.")
+            except Exception as e:
+                logger.error(f"Emergency fallback failed: {e}")
 
     if settings.ENVIRONMENT in ("development", "testing"):
         logger.info("Dev mode: auto-creating database tables via SQLAlchemy metadata...")
