@@ -192,12 +192,12 @@ export default function DashboardPage() {
         <FadeIn delay={0.05}>
           <button
             onClick={() => navigate('/assessment')}
-            className="text-left w-full h-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/95 hover:to-primary/75 text-primary-foreground rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all flex flex-col justify-between min-h-[140px] group active:scale-[0.98]"
+            className="text-left w-full h-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/95 hover:to-primary/75 text-primary-foreground rounded-xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col justify-between min-h-[100px] group active:scale-[0.98]"
           >
-            <span className="text-3xl bg-white/10 h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">🩺</span>
+            <span className="text-2xl bg-white/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3">🩺</span>
             <div>
-              <h2 className="text-base font-bold leading-tight">Start Health Assessment</h2>
-              <p className="text-xs text-primary-foreground/80 mt-1">Interactive symptom triage assistant</p>
+              <h2 className="text-sm font-bold leading-tight">Start Health Assessment</h2>
+              <p className="text-[11px] text-primary-foreground/80 mt-0.5 leading-snug">Interactive symptom triage assistant</p>
             </div>
           </button>
         </FadeIn>
@@ -205,12 +205,12 @@ export default function DashboardPage() {
         <FadeIn delay={0.08}>
           <button
             onClick={() => navigate('/voice')}
-            className="text-left w-full h-full bg-gradient-to-br from-accent/90 to-accent/70 hover:from-accent hover:to-accent/60 text-accent-foreground rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all flex flex-col justify-between min-h-[140px] group active:scale-[0.98]"
+            className="text-left w-full h-full bg-gradient-to-br from-accent/90 to-accent/70 hover:from-accent hover:to-accent/60 text-accent-foreground rounded-xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col justify-between min-h-[100px] group active:scale-[0.98]"
           >
-            <span className="text-3xl bg-black/10 h-12 w-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">🎤</span>
+            <span className="text-2xl bg-black/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3">🎤</span>
             <div>
-              <h2 className="text-base font-bold leading-tight">Start Voice Assessment</h2>
-              <p className="text-xs text-accent-foreground/80 mt-1">Hands-free voice triage session</p>
+              <h2 className="text-sm font-bold leading-tight">Start Voice Assessment</h2>
+              <p className="text-[11px] text-accent-foreground/80 mt-0.5 leading-snug">Hands-free voice triage session</p>
             </div>
           </button>
         </FadeIn>
