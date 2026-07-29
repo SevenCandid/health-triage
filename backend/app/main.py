@@ -128,6 +128,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                             END IF;
                         END $$;
                     '''))
+                    # Drop old session_id column if it exists
+                    await conn.execute(text('''
+                        DO $$
+                        BEGIN
+                            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='assessment_responses' AND column_name='session_id') THEN
+                                ALTER TABLE assessment_responses DROP COLUMN session_id;
+                            END IF;
+                        END $$;
+                    '''))
                 logger.info("Emergency fallback schema patch applied successfully.")
             except Exception as e:
                 logger.error(f"Emergency fallback failed: {e}")
