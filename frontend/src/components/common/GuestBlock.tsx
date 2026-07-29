@@ -1,3 +1,5 @@
+import React from 'react'
+import { Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -5,10 +7,10 @@ import { useAuthStore } from '@/stores/auth-store'
 
 interface GuestBlockProps {
   featureName: string
-  icon?: string
+  icon?: React.ReactNode
 }
 
-export function GuestBlock({ featureName, icon = '🔒' }: GuestBlockProps) {
+export function GuestBlock({ featureName, icon = <Lock className="w-4 h-4" /> }: GuestBlockProps) {
   const navigate = useNavigate()
   const { clearAuth } = useAuthStore()
 

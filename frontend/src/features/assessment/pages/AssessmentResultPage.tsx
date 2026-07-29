@@ -1,3 +1,5 @@
+import React from 'react'
+import { Bed, Microscope, Zap, Circle, Droplets, Hospital, Smartphone, BarChart2, Utensils, AlertTriangle, MessageSquare, Siren, Sparkles } from 'lucide-react'
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -14,7 +16,7 @@ import { AssessmentNotice } from '../components/AssessmentNotice'
 // ── Risk level config ────────────────────────────────────────────────────────
 
 interface RiskConfig {
-  emoji: string
+  emoji: React.ReactNode | string
   label: string
   sublabel: string
   gradient: string          // hero gradient classes
@@ -28,7 +30,7 @@ interface RiskConfig {
 
 const RISK: Record<string, RiskConfig> = {
   GREEN: {
-    emoji: '🟢',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Low Risk',
     sublabel: 'Monitor at home — no immediate care needed',
     gradient: 'from-emerald-500 to-teal-600',
@@ -40,7 +42,7 @@ const RISK: Record<string, RiskConfig> = {
     accentBar: 'bg-gradient-to-r from-emerald-500 to-teal-500',
   },
   LOW: {
-    emoji: '🟢',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Low Risk',
     sublabel: 'Monitor at home — no immediate care needed',
     gradient: 'from-emerald-500 to-teal-600',
@@ -52,7 +54,7 @@ const RISK: Record<string, RiskConfig> = {
     accentBar: 'bg-gradient-to-r from-emerald-500 to-teal-500',
   },
   YELLOW: {
-    emoji: '🟡',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Moderate Risk',
     sublabel: 'Schedule a clinic visit within 24–48 hours',
     gradient: 'from-amber-400 to-orange-500',
@@ -64,7 +66,7 @@ const RISK: Record<string, RiskConfig> = {
     accentBar: 'bg-gradient-to-r from-amber-400 to-orange-400',
   },
   MEDIUM: {
-    emoji: '🟡',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Moderate Risk',
     sublabel: 'Schedule a clinic visit within 24–48 hours',
     gradient: 'from-amber-400 to-orange-500',
@@ -100,7 +102,7 @@ const RISK: Record<string, RiskConfig> = {
     accentBar: 'bg-gradient-to-r from-orange-500 to-red-400',
   },
   RED: {
-    emoji: '🔴',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Emergency',
     sublabel: 'Call emergency services immediately',
     gradient: 'from-red-600 to-rose-700',
@@ -112,7 +114,7 @@ const RISK: Record<string, RiskConfig> = {
     accentBar: 'bg-gradient-to-r from-red-600 to-rose-600',
   },
   EMERGENCY: {
-    emoji: '🔴',
+    emoji: <Circle className="w-4 h-4" />,
     label: 'Emergency',
     sublabel: 'Call emergency services immediately',
     gradient: 'from-red-600 to-rose-700',
@@ -164,7 +166,7 @@ export default function AssessmentResultPage() {
   if (isError || !data) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
-        <p className="text-4xl">⚠️</p>
+        <p className="text-4xl"><AlertTriangle className="w-4 h-4" />️</p>
         <p className="text-base font-semibold text-foreground">Result Unavailable</p>
         <p className="text-sm text-muted-foreground">We couldn't load your assessment result.</p>
         <div className="flex gap-2 mt-2">
@@ -183,7 +185,7 @@ export default function AssessmentResultPage() {
   const symptomName = currentSymptoms[0] || 'General Health Concern'
   const symptomSlug = (result.symptom_name || symptomName).toLowerCase().replace(/\s+/g, '-')
 
-  const SYMPTOM_INFO: Record<string, string> = {
+  const SYMPTOM_INFO: Record<string, React.ReactNode | string> = {
     'headache': 'Headaches are common and may occur for many reasons including dehydration, stress, poor sleep, eye strain, or minor illnesses.',
     'fever': 'Fevers can indicate that the body is responding to an infection. They often resolve with rest, but can sometimes be a sign of conditions requiring attention.',
     'cough': 'Coughs are common respiratory responses that can occur due to viruses, allergies, or environmental irritants.',
@@ -213,7 +215,7 @@ export default function AssessmentResultPage() {
   return (
     <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-4">
 
-      {/* 🩺 Reusable Assessment Notice Disclaimer */}
+      {/* <Stethoscope className="w-4 h-4" /> Reusable Assessment Notice Disclaimer */}
       <Section delay={0}>
         <AssessmentNotice />
       </Section>
@@ -222,7 +224,7 @@ export default function AssessmentResultPage() {
         <Section delay={0.02}>
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-4">
             <p className="text-sm text-amber-700 dark:text-amber-400 font-medium flex items-center gap-2">
-              <span className="text-lg">⚡</span>
+              <span className="text-lg"><Zap className="w-4 h-4" /></span>
               Offline Mode Active: Your assessment was processed locally. AI insights will be generated when you reconnect.
             </p>
           </div>
@@ -275,7 +277,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.1}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-2">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            💬 What We Understood
+            <MessageSquare className="w-4 h-4" /> What We Understood
           </h2>
           <div className="text-xs text-muted-foreground space-y-1">
             <p>Reported Symptom: <span className="font-semibold text-foreground">{result.symptom_name || symptomName}</span></p>
@@ -308,7 +310,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.2}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
-            <span className="text-sm">🔬</span>
+            <span className="text-sm"><Microscope className="w-4 h-4" /></span>
             <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Why This Recommendation</h2>
           </div>
           <div className="px-4 py-3 space-y-2">
@@ -337,23 +339,23 @@ export default function AssessmentResultPage() {
           </div>
           <ul className="divide-y divide-border/60">
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
-              <span className="mt-0.5 text-sm">🛏️</span>
+              <span className="mt-0.5 text-sm"><Bed className="w-4 h-4" />️</span>
               <p className="leading-snug">Ensure adequate rest to allow the body to recover.</p>
             </li>
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
-              <span className="mt-0.5 text-sm">💧</span>
+              <span className="mt-0.5 text-sm"><Droplets className="w-4 h-4" /></span>
               <p className="leading-snug">Maintain hydration by drinking clear fluids regularly.</p>
             </li>
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
-              <span className="mt-0.5 text-sm">🥗</span>
+              <span className="mt-0.5 text-sm"><Utensils className="w-4 h-4" /></span>
               <p className="leading-snug">Eat balanced, healthy meals to support immune function.</p>
             </li>
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
-              <span className="mt-0.5 text-sm">📱</span>
+              <span className="mt-0.5 text-sm"><Smartphone className="w-4 h-4" /></span>
               <p className="leading-snug">Avoid excessive screen time to reduce eye strain and fatigue.</p>
             </li>
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
-              <span className="mt-0.5 text-sm">📊</span>
+              <span className="mt-0.5 text-sm"><BarChart2 className="w-4 h-4" /></span>
               <p className="leading-snug">Monitor your symptoms closely and note any changes or worsening trends.</p>
             </li>
           </ul>
@@ -364,7 +366,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.3}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            ⚠️ Warning Signs
+            <AlertTriangle className="w-4 h-4" />️ Warning Signs
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
             Please seek immediate medical attention if you experience key warning signs such as:
@@ -382,7 +384,7 @@ export default function AssessmentResultPage() {
       {userRole === 'GUEST' && (
         <Section delay={0.32}>
           <Card className="border-primary/30 bg-primary/5 text-center p-5 space-y-3 rounded-2xl">
-            <p className="text-2xl">✨</p>
+            <p className="text-2xl"><Sparkles className="w-4 h-4" /></p>
             <p className="text-xs font-bold text-foreground leading-relaxed">
               Create a free account to save this assessment and track your health over time.
             </p>
@@ -430,7 +432,7 @@ export default function AssessmentResultPage() {
                 onClick={() => navigate('/emergency')}
                 className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl py-3 mt-2 transition-all shadow-md shadow-red-500/30"
               >
-                <span>🚨</span> Call Emergency Services
+                <span><Siren className="w-4 h-4" /></span> Call Emergency Services
               </motion.button>
             )}
 
@@ -438,7 +440,7 @@ export default function AssessmentResultPage() {
               onClick={() => window.open('https://www.google.com/maps/search/hospital+near+me', '_blank')}
               className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all mt-2"
             >
-              <span>🏥</span> Find Nearby Hospital
+              <span><Hospital className="w-4 h-4" /></span> Find Nearby Hospital
             </button>
           </div>
         </div>

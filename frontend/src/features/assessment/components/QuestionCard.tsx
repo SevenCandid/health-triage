@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
@@ -44,7 +45,7 @@ export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardP
               disabled={isSubmitting}
               className="flex-1 rounded-xl border border-green-500/30 bg-green-500/5 py-3 text-sm font-semibold text-green-600 transition-colors hover:bg-green-500/15 dark:text-green-400"
             >
-              ✓ Yes
+              <Check className="w-4 h-4" /> Yes
             </button>
             <button
               onClick={() => handleSingleSelect('no')}
@@ -101,7 +102,7 @@ export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardP
                     }`}
                   >
                     <span className={`h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center text-xs ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-current'}`}>
-                      {isSelected && '✓'}
+                      {isSelected && <Check className="w-4 h-4" />}
                     </span>
                     {opt.label_en}
                   </button>

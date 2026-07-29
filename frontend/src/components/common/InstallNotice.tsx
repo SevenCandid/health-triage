@@ -1,3 +1,4 @@
+import { HeartPulse } from 'lucide-react'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
 import { Button } from '@/components/ui/Button'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -16,7 +17,7 @@ export function InstallNotice() {
         >
           <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-xl">❤️‍🩹</span>
+              <span className="text-xl"><HeartPulse className="w-4 h-4" /></span>
               <div>
                 <p className="text-sm font-semibold text-primary">Install Triage Assistant</p>
                 <p className="text-xs text-muted-foreground hidden sm:block">

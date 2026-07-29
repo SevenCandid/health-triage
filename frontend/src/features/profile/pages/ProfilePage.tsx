@@ -1,3 +1,5 @@
+import React from 'react'
+import { Hospital, User, X } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -15,7 +17,7 @@ import type { HealthProfile, EmergencyContact, EmergencyContactRequest } from '@
 
 type Tab = 'profile' | 'history' | 'contacts'
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
+const TABS: { id: Tab; label: string; icon: React.ReactNode | string }[] = [
   { id: 'profile', label: 'Health Profile', icon: '🧬' },
   { id: 'history', label: 'History', icon: '📋' },
   { id: 'contacts', label: 'Emergency Contacts', icon: '🆘' },
@@ -23,7 +25,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 // ── Toggle Switch ─────────────────────────────────────────────────────────────
 
-function SectionHeader({ icon, title }: { icon: string; title: string }) {
+function SectionHeader({ icon, title }: { icon: React.ReactNode | string; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <span className="text-xl">{icon}</span>
@@ -81,7 +83,7 @@ function ProfileTab({ profile }: { profile: HealthProfile | null }) {
   return (
     <div className="space-y-6">
       <Card>
-        <SectionHeader icon="👤" title="Personal Information" />
+        <SectionHeader icon=<User className="w-4 h-4" /> title="Personal Information" />
         {!editing && profile ? (
           <div className="space-y-3">
             <InfoRow label="Full Name" value={profile.full_name} />
@@ -147,7 +149,7 @@ function ProfileTab({ profile }: { profile: HealthProfile | null }) {
       </Card>
 
       <Card>
-        <SectionHeader icon="🏥" title="Medical History" />
+        <SectionHeader icon=<Hospital className="w-4 h-4" /> title="Medical History" />
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-2">Chronic Conditions</label>
@@ -155,7 +157,7 @@ function ProfileTab({ profile }: { profile: HealthProfile | null }) {
               {(form.chronic_conditions ?? []).map((c, i) => (
                 <span key={i} className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-3 py-1 text-sm">
                   {c}
-                  <button onClick={() => removeTag('chronic_conditions', i)} className="hover:text-red-500 font-bold">×</button>
+                  <button onClick={() => removeTag('chronic_conditions', i)} className="hover:text-red-500 font-bold"><X className="w-4 h-4" /></button>
                 </span>
               ))}
             </div>
@@ -176,7 +178,7 @@ function ProfileTab({ profile }: { profile: HealthProfile | null }) {
               {(form.known_allergies ?? []).map((a, i) => (
                 <span key={i} className="inline-flex items-center gap-1 rounded-full bg-urgency-emergency/10 text-urgency-emergency px-3 py-1 text-sm">
                   {a}
-                  <button onClick={() => removeTag('known_allergies', i)} className="hover:opacity-70 font-bold">×</button>
+                  <button onClick={() => removeTag('known_allergies', i)} className="hover:opacity-70 font-bold"><X className="w-4 h-4" /></button>
                 </span>
               ))}
             </div>
@@ -276,7 +278,7 @@ function ContactsTab({ contacts }: { contacts: EmergencyContact[] }) {
         <Card key={c.id} className="flex items-start justify-between gap-4">
           <div className="flex gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg flex-shrink-0">
-              {c.relationship_type === 'HEALTHCARE_PROVIDER' ? '👨‍⚕️' : '👤'}
+              {c.relationship_type === 'HEALTHCARE_PROVIDER' ? <span className="flex items-center gap-1"><User className="w-4 h-4" /><Hospital className="w-3 h-3" /></span> : <User className="w-4 h-4" />}
             </div>
             <div>
               <p className="font-semibold text-foreground">{c.contact_name}</p>
@@ -376,7 +378,7 @@ export default function ProfilePage() {
   })
 
   if (userRole === 'GUEST') {
-    return <GuestBlock featureName="Profile" icon="👤" />
+    return <GuestBlock featureName="Profile" icon=<User className="w-4 h-4" /> />
   }
 
   if (isLoading || authLoading) return <PageLoader />

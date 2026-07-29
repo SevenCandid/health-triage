@@ -1,3 +1,4 @@
+import { User, AlertTriangle, Phone, Siren, Activity } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -57,7 +58,7 @@ export default function EmergencyPage() {
   })
 
   if (userRole === 'GUEST') {
-    return <GuestBlock featureName="Emergency Center" icon="🚨" />
+    return <GuestBlock featureName="Emergency Center" icon=<Siren className="w-4 h-4" /> />
   }
 
   const contacts = contactsData?.data || []
@@ -95,7 +96,7 @@ export default function EmergencyPage() {
 
       {!isOnline && (
         <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 flex gap-2 items-center text-xs text-yellow-700 dark:text-yellow-400">
-          <span>⚠️</span>
+          <span><AlertTriangle className="w-4 h-4" />️</span>
           <span>Phone calls still work offline via your cellular network.</span>
         </div>
       )}
@@ -104,7 +105,7 @@ export default function EmergencyPage() {
       <Card className="overflow-hidden border-2 border-red-500/40 p-0">
         <div className="bg-red-500/5 px-4 py-5 flex flex-col items-center text-center gap-3">
           <div className="h-14 w-14 rounded-full bg-red-500/15 flex items-center justify-center">
-            <span className="text-3xl leading-none">🚨</span>
+            <span className="text-3xl leading-none"><Siren className="w-4 h-4" /></span>
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">Emergency Services</p>
@@ -125,7 +126,7 @@ export default function EmergencyPage() {
         {/* Doctor */}
         <Card className="flex flex-col gap-3 p-3 border border-primary/20">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0">👨‍⚕️</div>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" />‍<Activity className="w-4 h-4" />️</div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground">Doctor</p>
               <p className="text-[10px] text-muted-foreground truncate">
@@ -153,7 +154,7 @@ export default function EmergencyPage() {
         {/* Emergency Contact */}
         <Card className="flex flex-col gap-3 p-3 border border-primary/20">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0">👤</div>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" /></div>
             <div className="min-w-0">
               <p className="text-xs font-semibold text-foreground">Contact</p>
               <p className="text-[10px] text-muted-foreground truncate">
@@ -194,7 +195,7 @@ export default function EmergencyPage() {
                   onClick={() => setConfirmingContact({ name: c.contact_name, phone: c.phone_number })}
                   className="shrink-0 text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-all"
                 >
-                  📞 Call
+                  <Phone className="w-4 h-4" /> Call
                 </button>
               </div>
             ))}
@@ -217,7 +218,7 @@ export default function EmergencyPage() {
             >
               <div className="space-y-4">
                 <div className="text-center">
-                  <span className="text-3xl block mb-1">{addMode === 'HEALTHCARE_PROVIDER' ? '👨‍⚕️' : '👤'}</span>
+                  <span className="text-3xl block mb-1">{addMode === 'HEALTHCARE_PROVIDER' ? <span className="flex items-center justify-center"><User className="w-6 h-6" /><Activity className="w-4 h-4" /></span> : <User className="w-8 h-8" />}</span>
                   <h2 className="text-base font-bold text-foreground">
                     {addMode === 'HEALTHCARE_PROVIDER' ? 'Add Your Doctor' : 'Add Emergency Contact'}
                   </h2>
@@ -285,7 +286,7 @@ export default function EmergencyPage() {
               className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl border-2 border-red-500/60"
             >
               <div className="text-center space-y-3">
-                <span className="text-4xl block">🚨</span>
+                <span className="text-4xl block"><Siren className="w-4 h-4" /></span>
                 <h2 className="text-base font-bold text-foreground">Call Emergency Services?</h2>
                 <p className="text-xs text-muted-foreground">
                   Are you sure you want to dial <strong>{DEFAULT_EMERGENCY_NUMBER}</strong> now?
@@ -314,7 +315,7 @@ export default function EmergencyPage() {
               className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl border border-border"
             >
               <div className="text-center space-y-3">
-                <span className="text-3xl block">📞</span>
+                <span className="text-3xl block"><Phone className="w-4 h-4" /></span>
                 <h2 className="text-base font-bold text-foreground">Call {confirmingContact.name}?</h2>
                 <p className="text-xs text-muted-foreground font-mono">{confirmingContact.phone}</p>
                 <div className="flex flex-col gap-2 pt-2">

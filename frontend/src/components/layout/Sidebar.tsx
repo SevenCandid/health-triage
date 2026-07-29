@@ -1,15 +1,16 @@
+import { Home, User, Settings, BarChart2, ScrollText, ChevronLeft, ChevronRight, Siren } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth-store'
 import { cn } from '@/lib/utils'
 
 export const navItems = [
-  { to: '/dashboard', label: 'Assess', icon: '🏠' },
-  { to: '/insights', label: 'Insights', icon: '📊' },
-  { to: '/history', label: 'History', icon: '📜' },
-  { to: '/emergency', label: 'Emergency', icon: '🚨' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/dashboard', label: 'Assess', icon: <Home className="w-4 h-4" /> },
+  { to: '/insights', label: 'Insights', icon: <BarChart2 className="w-4 h-4" /> },
+  { to: '/history', label: 'History', icon: <ScrollText className="w-4 h-4" /> },
+  { to: '/emergency', label: 'Emergency', icon: <Siren className="w-4 h-4" /> },
+  { to: '/profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
+  { to: '/settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
 ]
 
 export function Sidebar() {
@@ -75,7 +76,7 @@ export function Sidebar() {
           )}
           title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          <span className="text-lg flex-shrink-0 flex items-center justify-center w-6">{isCollapsed ? '▶️' : '◀️'}</span>
+          <span className="text-lg flex-shrink-0 flex items-center justify-center w-6">{isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}</span>
           <span className={cn(
             "text-sm font-medium whitespace-nowrap transition-all duration-300",
             isCollapsed ? "opacity-0 w-0 hidden" : "opacity-100 w-auto"

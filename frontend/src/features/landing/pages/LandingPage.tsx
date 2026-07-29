@@ -1,3 +1,4 @@
+import { HeartPulse, Stethoscope, Hospital, Heart } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -71,7 +72,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 font-bold text-foreground">
-            <span className="text-2xl">❤️‍🩹</span>
+            <span className="text-2xl"><HeartPulse className="w-4 h-4" /></span>
             <span>Triage Assistant</span>
           </div>
           <div className="flex items-center gap-2">
@@ -91,7 +92,7 @@ export default function LandingPage() {
           className="space-y-4 max-w-3xl"
         >
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-            🏥 Professional Triage Companion
+            <Hospital className="w-4 h-4" /> Professional Triage Companion
           </span>
           <h1 className="text-3xl sm:text-5xl font-extrabold text-foreground tracking-tight leading-tight">
             Your Personal Health Companion
@@ -164,7 +165,7 @@ export default function LandingPage() {
             >
               <div className="text-center space-y-4">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-xl mx-auto">
-                  🩺
+                  <Stethoscope className="w-4 h-4" />
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-foreground">Welcome to Health Triage</h2>
@@ -194,7 +195,7 @@ export default function LandingPage() {
 
       {/* ── Footer ─────────────────────────────────────────────── */}
       <footer className="border-t border-border bg-muted/20 py-4 text-center text-[10px] text-muted-foreground">
-        Made with ❤️ by SEVEN
+        Made with <Heart className="w-4 h-4" />️ by SEVEN
       </footer>
 
     </div>

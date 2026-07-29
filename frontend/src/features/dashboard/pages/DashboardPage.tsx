@@ -1,3 +1,5 @@
+import React from 'react'
+import { Mic, HelpCircle, Circle, X, AlertTriangle, Stethoscope, Hand } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -126,7 +128,7 @@ export default function DashboardPage() {
   const rawName = profile?.full_name || authUser?.full_name || ''
   const firstName = rawName ? rawName.trim().split(' ')[0] : 'Guest'
 
-  const RISK_COLORS: Record<string, string> = {
+  const RISK_COLORS: Record<string, React.ReactNode | string> = {
     LOW: 'bg-green-500/10 text-green-600 border-green-500/20',
     GREEN: 'bg-green-500/10 text-green-600 border-green-500/20',
     MEDIUM: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20',
@@ -137,15 +139,15 @@ export default function DashboardPage() {
     RED: 'bg-red-500/10 text-red-600 border-red-500/20 animate-pulse',
   }
 
-  const RISK_EMOJIS: Record<string, string> = {
-    LOW: '🟢',
-    GREEN: '🟢',
-    MEDIUM: '🟡',
-    YELLOW: '🟡',
+  const RISK_EMOJIS: Record<string, React.ReactNode | string> = {
+    LOW: <Circle className="w-4 h-4" />,
+    GREEN: <Circle className="w-4 h-4" />,
+    MEDIUM: <Circle className="w-4 h-4" />,
+    YELLOW: <Circle className="w-4 h-4" />,
     HIGH: '🟠',
     ORANGE: '🟠',
-    EMERGENCY: '🔴',
-    RED: '🔴',
+    EMERGENCY: <Circle className="w-4 h-4" />,
+    RED: <Circle className="w-4 h-4" />,
   }
 
   return (
@@ -159,14 +161,14 @@ export default function DashboardPage() {
           className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400"
         >
           <div className="flex items-center gap-1.5">
-            <span>⚠️</span>
+            <span><AlertTriangle className="w-4 h-4" />️</span>
             <span>Profile incomplete — triage accuracy may be reduced.</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => navigate('/profile')} className="font-semibold underline underline-offset-2 hover:opacity-80">
               Set up
             </button>
-            <button onClick={() => setBannerDismissed(true)} className="opacity-50 hover:opacity-100 font-bold" aria-label="Dismiss">×</button>
+            <button onClick={() => setBannerDismissed(true)} className="opacity-50 hover:opacity-100 font-bold" aria-label="Dismiss"><X className="w-4 h-4" /></button>
           </div>
         </motion.div>
       )}
@@ -194,7 +196,7 @@ export default function DashboardPage() {
             onClick={() => navigate('/assessment')}
             className="text-left w-full h-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/95 hover:to-primary/75 text-primary-foreground rounded-xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col justify-between min-h-[100px] group active:scale-[0.98]"
           >
-            <span className="text-2xl bg-white/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3">🩺</span>
+            <span className="text-2xl bg-white/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3"><Stethoscope className="w-4 h-4" /></span>
             <div>
               <h2 className="text-sm font-bold leading-tight">Start Health Assessment</h2>
               <p className="text-[11px] text-primary-foreground/80 mt-0.5 leading-snug">Interactive symptom triage assistant</p>
@@ -207,7 +209,7 @@ export default function DashboardPage() {
             onClick={() => navigate('/voice')}
             className="text-left w-full h-full bg-gradient-to-br from-accent/90 to-accent/70 hover:from-accent hover:to-accent/60 text-accent-foreground rounded-xl p-4 shadow-md hover:shadow-lg transition-all flex flex-col justify-between min-h-[100px] group active:scale-[0.98]"
           >
-            <span className="text-2xl bg-black/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3">🎤</span>
+            <span className="text-2xl bg-black/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3"><Mic className="w-4 h-4" /></span>
             <div>
               <h2 className="text-sm font-bold leading-tight">Start Voice Assessment</h2>
               <p className="text-[11px] text-accent-foreground/80 mt-0.5 leading-snug">Hands-free voice triage session</p>
@@ -266,7 +268,7 @@ export default function DashboardPage() {
                   </span>
                   {lastSessionResultData?.data && (
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${RISK_COLORS[lastSessionResultData.data.severity] || 'bg-muted'}`}>
-                      {RISK_EMOJIS[lastSessionResultData.data.severity] || '❓'} {lastSessionResultData.data.severity}
+                      {RISK_EMOJIS[lastSessionResultData.data.severity] || <HelpCircle className="w-4 h-4" />} {lastSessionResultData.data.severity}
                     </span>
                   )}
                 </div>
@@ -279,7 +281,7 @@ export default function DashboardPage() {
           ) : (
             <Card className="text-center p-8 border border-border/60 bg-gradient-to-b from-card to-muted/10 shadow-sm flex flex-col items-center justify-center">
               <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-3">
-                <p className="text-xl">👋</p>
+                <p className="text-xl"><Hand className="w-4 h-4" /></p>
               </div>
               <p className="text-xs font-semibold text-foreground">No recent conversations</p>
               <p className="text-[11px] text-muted-foreground mt-1">When you complete an assessment, your recommendations will appear here.</p>

@@ -1,3 +1,5 @@
+import React from 'react'
+import { CheckCircle2, Check, Mic, Settings, Accessibility, Info, AlertTriangle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useSettingsStore } from '@/stores/settings-store'
@@ -7,7 +9,7 @@ import type { AppLanguage, FontSize } from '@/stores/settings-store'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function SettingsSection({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
+function SettingsSection({ icon, title, children }: { icon: React.ReactNode | string; title: string; children: React.ReactNode }) {
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
       <Card className="overflow-hidden" padding="none">
@@ -79,7 +81,7 @@ function LanguageSelector() {
             <p className="text-sm font-medium">{lang.label}</p>
             {lang.native !== lang.label && <p className="text-xs opacity-70">{lang.native}</p>}
           </div>
-          {appLanguage === lang.code && <span className="ml-auto">✓</span>}
+          {appLanguage === lang.code && <span className="ml-auto"><Check className="w-4 h-4" /></span>}
         </button>
       ))}
     </div>
@@ -185,7 +187,7 @@ export default function SettingsPage() {
   const { isOnline } = useNetworkStore()
 
   if (userRole === 'GUEST') {
-    return <GuestBlock featureName="Settings" icon="⚙️" />
+    return <GuestBlock featureName="Settings" icon=<Settings className="w-4 h-4" /> />
   }
 
   return (
@@ -206,12 +208,12 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* Voice */}
-      <SettingsSection icon="🎙️" title="Voice Consultation">
+      <SettingsSection icon=<Mic className="w-4 h-4" /> title="Voice Consultation">
         <VoiceSettings />
       </SettingsSection>
 
       {/* Accessibility */}
-      <SettingsSection icon="♿" title="Accessibility">
+      <SettingsSection icon=<Accessibility className="w-4 h-4" /> title="Accessibility">
         <div className="p-4 border-b border-border">
           <p className="text-sm font-medium text-foreground mb-3">Text Size</p>
           <FontSizeSelector />
@@ -233,8 +235,8 @@ export default function SettingsPage() {
           <Toggle value={offlineModeEnabled} onChange={setOfflineModeEnabled} />
         </SettingsRow>
         <SettingsRow label="Current Status" description="Live network connectivity">
-          <span className={`text-sm font-semibold ${isOnline ? 'text-green-600' : 'text-yellow-600'}`}>
-            {isOnline ? '✅ Connected' : '⚠️ Offline'}
+          <span className={`text-sm font-semibold flex items-center gap-1.5 ${isOnline ? 'text-green-600' : 'text-yellow-600'}`}>
+            {isOnline ? <><CheckCircle2 className="w-4 h-4" /> Connected</> : <><AlertTriangle className="w-4 h-4" /> Offline</>}
           </span>
         </SettingsRow>
       </SettingsSection>
@@ -253,7 +255,7 @@ export default function SettingsPage() {
       </SettingsSection>
 
       {/* About */}
-      <SettingsSection icon="ℹ️" title="About">
+      <SettingsSection icon=<Info className="w-4 h-4" /> title="About">
         <SettingsRow label="App Version" description="Health Triage Assistant">
           <span className="text-sm text-muted-foreground">v1.0.0</span>
         </SettingsRow>

@@ -1,8 +1,9 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
 interface EmptyStateProps {
-  icon?: string
+  icon?: React.ReactNode
   title: string
   description?: string
   action?: {

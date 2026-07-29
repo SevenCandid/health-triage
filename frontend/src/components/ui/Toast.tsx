@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 
@@ -10,7 +11,7 @@ interface ToastProps {
 }
 
 const typeConfig = {
-  success: { bg: 'bg-urgency-routine', icon: '✓' },
+  success: { bg: 'bg-urgency-routine', icon: <Check className="w-4 h-4" /> },
   error:   { bg: 'bg-urgency-emergency', icon: '✕' },
   warning: { bg: 'bg-urgency-elevated', icon: '!' },
   info:    { bg: 'bg-primary', icon: 'ℹ' },

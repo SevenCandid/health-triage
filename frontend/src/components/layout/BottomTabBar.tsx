@@ -1,13 +1,14 @@
+import { ScrollText, Home, User, Siren } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
 
 const tabItems = [
-  { to: '/dashboard', label: 'Assess', icon: '🏠' },
-  { to: '/history', label: 'History', icon: '📜' },
-  { to: '/emergency', label: 'Emergency', icon: '🚨' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
+  { to: '/dashboard', label: 'Assess', icon: <Home className="w-4 h-4" /> },
+  { to: '/history', label: 'History', icon: <ScrollText className="w-4 h-4" /> },
+  { to: '/emergency', label: 'Emergency', icon: <Siren className="w-4 h-4" /> },
+  { to: '/profile', label: 'Profile', icon: <User className="w-4 h-4" /> },
 ]
 
 /**

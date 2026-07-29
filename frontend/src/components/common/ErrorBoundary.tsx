@@ -1,3 +1,4 @@
+import { AlertTriangle } from 'lucide-react'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import { motion } from 'framer-motion'
 
@@ -38,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
             animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center shadow-lg"
           >
-            <div className="mb-4 text-5xl">⚠️</div>
+            <div className="mb-4 text-5xl"><AlertTriangle className="w-4 h-4" />️</div>
             <h1 className="mb-2 text-xl font-semibold text-foreground">Something went wrong</h1>
             <p className="mb-6 text-sm text-muted-foreground">
               {this.state.error?.message ?? 'An unexpected error occurred. Please try again.'}

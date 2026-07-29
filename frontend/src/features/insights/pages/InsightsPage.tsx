@@ -1,3 +1,5 @@
+import React from 'react'
+import { CheckCircle2, BarChart2 } from 'lucide-react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -30,7 +32,7 @@ function FadeIn({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 // ── Stat Card ──────────────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, color }: {
-  icon: string; label: string; value: string | number; color?: string
+  icon: React.ReactNode | string; label: string; value: string | number; color?: string
 }) {
   return (
     <Card className="flex items-center gap-2.5 p-3">
@@ -124,8 +126,8 @@ export default function InsightsPage() {
       {/* Stat Cards */}
       <FadeIn delay={0.05}>
         <div className="grid grid-cols-2 gap-2">
-          <StatCard icon="📊" label="Total Sessions" value={stats.totalSessions} color="bg-blue-500/10" />
-          <StatCard icon="✅" label="Completed" value={stats.completedCount} color="bg-green-500/10" />
+          <StatCard icon=<BarChart2 className="w-4 h-4" /> label="Total Sessions" value={stats.totalSessions} color="bg-blue-500/10" />
+          <StatCard icon=<CheckCircle2 className="w-4 h-4" /> label="Completed" value={stats.completedCount} color="bg-green-500/10" />
         </div>
       </FadeIn>
 
@@ -159,7 +161,7 @@ export default function InsightsPage() {
         </div>
       ) : (
         <Card className="text-center py-12">
-          <p className="text-3xl mb-2">📊</p>
+          <p className="text-3xl mb-2"><BarChart2 className="w-4 h-4" /></p>
           <h3 className="font-semibold text-foreground">No insights available</h3>
           <p className="text-xs text-muted-foreground mt-1">Complete symptom assessments to generate health analytics.</p>
         </Card>

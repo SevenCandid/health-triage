@@ -1,3 +1,4 @@
+import { Sun, HeartPulse, Smartphone, Moon, LogOut } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
@@ -34,7 +35,7 @@ export function Navbar() {
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 font-bold text-foreground">
-          <span className="text-2xl">❤️‍🩹</span>
+          <span className="text-2xl"><HeartPulse className="w-4 h-4" /></span>
           <span>Triage Assistant</span>
         </NavLink>
 
@@ -50,7 +51,7 @@ export function Navbar() {
               onClick={promptInstall}
               className="hidden sm:flex text-xs h-8 font-semibold gap-1.5 border-primary/20 text-primary bg-primary/5 hover:bg-primary/10"
             >
-              <span>📱</span> Install App
+              <span><Smartphone className="w-4 h-4" /></span> Install App
             </Button>
           )}
 
@@ -70,7 +71,7 @@ export function Navbar() {
             aria-label="Toggle dark mode"
             className="rounded-lg p-2 text-muted-foreground transition hover:bg-accent hover:text-foreground mr-1"
           >
-            {resolvedTheme === 'dark' ? '☀️' : '🌙'}
+            {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           {/* Auth Controls */}
@@ -133,7 +134,7 @@ export function Navbar() {
                     onClick={() => { promptInstall(); setMenuOpen(false); }}
                     className="w-full text-xs font-semibold py-2.5 flex items-center justify-center gap-2 border-primary/20 text-primary bg-primary/5"
                   >
-                    <span>📱</span> Install Triage App
+                    <span><Smartphone className="w-4 h-4" /></span> Install Triage App
                   </Button>
                 </li>
               )}
@@ -178,7 +179,7 @@ export function Navbar() {
                     onClick={() => { handleLogout(); setMenuOpen(false) }}
                     className="w-full text-left flex items-center gap-2 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:bg-accent"
                   >
-                    <span>🚪</span> Logout
+                    <span><LogOut className="w-4 h-4" /></span> Logout
                   </button>
                 </li>
               )}

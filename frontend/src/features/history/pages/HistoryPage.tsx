@@ -1,3 +1,5 @@
+import React from 'react'
+import { Package, CheckCircle2, Stethoscope, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -11,10 +13,10 @@ import { useAuthStore } from '@/stores/auth-store'
 import { GuestBlock } from '@/components/common/GuestBlock'
 
 
-const STATUS_EMOJI: Record<string, string> = {
-  COMPLETED: '✅',
-  ACTIVE: '🔄',
-  ARCHIVED: '📦',
+const STATUS_EMOJI: Record<string, React.ReactNode | string> = {
+  COMPLETED: <CheckCircle2 className="w-4 h-4" />,
+  ACTIVE: <RefreshCw className="w-4 h-4" />,
+  ARCHIVED: <Package className="w-4 h-4" />,
   SYNCED: '☁️',
 }
 
@@ -114,7 +116,7 @@ export default function HistoryPage() {
           <div className="divide-y divide-border">
             {filtered.map((session, i) => {
               const date = new Date(session.created_at)
-              const emoji = STATUS_EMOJI[session.status] ?? '🩺'
+              const emoji = STATUS_EMOJI[session.status] ?? <Stethoscope className="w-4 h-4" />
               return (
                 <motion.div
                   key={session.id}

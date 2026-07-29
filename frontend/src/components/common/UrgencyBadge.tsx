@@ -1,3 +1,4 @@
+import React from 'react'
 import { cn } from '@/lib/utils'
 import { type UrgencyLevel, URGENCY_STYLES } from '@/types'
 
@@ -7,7 +8,7 @@ interface UrgencyBadgeProps {
   pulse?: boolean
 }
 
-const URGENCY_LABELS: Record<string, string> = {
+const URGENCY_LABELS: Record<string, React.ReactNode | string> = {
   EMERGENCY: 'Emergency',
   HIGH: 'High',
   MEDIUM: 'Medium',

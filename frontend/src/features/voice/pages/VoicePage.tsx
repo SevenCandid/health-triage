@@ -1,3 +1,4 @@
+import { Mic } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
@@ -35,7 +36,7 @@ export default function VoicePage() {
   const { preferredVoiceURI } = useSettingsStore()
 
   if (userRole === 'GUEST') {
-    return <GuestBlock featureName="Voice Consultation" icon="🎙️" />
+    return <GuestBlock featureName="Voice Consultation" icon=<Mic className="w-4 h-4" /> />
   }
 
   const [voiceState, setVoiceState] = useState<VoiceState>('IDLE')
