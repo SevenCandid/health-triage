@@ -86,6 +86,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ---- STARTUP ----
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} [{settings.ENVIRONMENT}]")
 
+    if settings.ENVIRONMENT == "production":
+        import subprocess
+        logger.info("Production mode: Running Alembic migrations...")
+        try:
+            subprocess.run(["alembic", "upgrade", "head"], check=True)
+            logger.info("Alembic migrations completed successfully.")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Alembic migrations failed: {e}")
+
     if settings.ENVIRONMENT in ("development", "testing"):
         logger.info("Dev mode: auto-creating database tables via SQLAlchemy metadata...")
         async with engine.begin() as conn:
