@@ -229,7 +229,7 @@ export default function DashboardPage() {
             />
             <QuickAction
               icon={History}
-              label="Assessment History"
+              label="Health Conversations"
               description="View your past triage sessions"
               onClick={() => navigate('/history')}
             />
@@ -277,9 +277,12 @@ export default function DashboardPage() {
               <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
             </Card>
           ) : (
-            <Card className="text-center p-6 border border-border bg-card shadow-sm">
-              <p className="text-2xl mb-1">📋</p>
-              <p className="text-xs text-muted-foreground">No previous assessments.</p>
+            <Card className="text-center p-8 border border-border/60 bg-gradient-to-b from-card to-muted/10 shadow-sm flex flex-col items-center justify-center">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mb-3">
+                <p className="text-xl">👋</p>
+              </div>
+              <p className="text-xs font-semibold text-foreground">No recent conversations</p>
+              <p className="text-[11px] text-muted-foreground mt-1">When you complete an assessment, your recommendations will appear here.</p>
             </Card>
           )}
         </div>

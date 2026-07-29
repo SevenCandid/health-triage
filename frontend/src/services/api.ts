@@ -83,6 +83,9 @@ export const assessmentApi = {
       answer_value: Array.isArray(answer) ? answer.join(',') : answer,
     }),
 
+  resolveSession: (sessionId: string) =>
+    apiClient.post(`/assessment/${sessionId}/resolve`),
+
   getConversationTranscript: (sessionId: string) =>
     apiClient.get<{
       session_id: string

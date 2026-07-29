@@ -12,9 +12,9 @@ export function ChatBubble({ role, message, animate = true }: ChatBubbleProps) {
 
   return (
     <motion.div
-      initial={animate ? { opacity: 0, y: 8 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
+      initial={animate ? { opacity: 0, y: 5, scale: 0.98 } : false}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 24, mass: 0.8 }}
       className={cn('flex w-full mb-3 gap-3', isUser ? 'justify-end' : 'justify-start items-start')}
     >
       {!isUser && (

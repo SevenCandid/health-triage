@@ -31,9 +31,9 @@ if TYPE_CHECKING:
 class SessionStatus(str, enum.Enum):
     """Lifecycle status of an assessment session."""
 
-    IN_PROGRESS = "IN_PROGRESS"    # Questions still being answered
+    ACTIVE = "ACTIVE"              # Questions still being answered / Active conversation
     COMPLETED = "COMPLETED"        # Full evaluation completed
-    ABANDONED = "ABANDONED"        # User closed before completion
+    ARCHIVED = "ARCHIVED"          # User closed before completion or manually archived
     SYNCED = "SYNCED"              # Offline session synced to server
 
 
@@ -98,8 +98,8 @@ class AssessmentSessionModel(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     status: Mapped[SessionStatus] = mapped_column(
         SAEnum(SessionStatus, name="session_status_enum", create_type=True),
         nullable=False,
-        default=SessionStatus.IN_PROGRESS,
-        server_default=SessionStatus.IN_PROGRESS.value,
+        default=SessionStatus.ACTIVE,
+        server_default=SessionStatus.ACTIVE.value,
         index=True,
         comment="Lifecycle status of this assessment session.",
     )

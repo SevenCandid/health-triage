@@ -10,6 +10,7 @@ import { ChatBubble } from '../components/ChatBubble'
 import { TypingIndicator } from '../components/TypingIndicator'
 import { QuestionCard } from '../components/QuestionCard'
 import { AssessmentNotice } from '../components/AssessmentNotice'
+import { getRandomPrompt } from '@/lib/conversations'
 
 interface ChatMessage {
   id: string
@@ -42,8 +43,10 @@ export default function AssessmentPage() {
   const [symptomInput, setSymptomInput] = useState('')
   const [showSymptomChips, setShowSymptomChips] = useState(true)
   const [pendingSymptom, setPendingSymptom] = useState<string | null>(null)
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null)
   const [showPendingConfirmation, setShowPendingConfirmation] = useState(false)
   const [sufficientInfoConfirmation, setSufficientInfoConfirmation] = useState(false)
+  const [isTypingSimulated, setIsTypingSimulated] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom on new messages
@@ -58,6 +61,7 @@ export default function AssessmentPage() {
       startSession(res.data.session_id)
       if (res.data.pending_symptom) {
         setPendingSymptom(res.data.pending_symptom)
+        setPendingSessionId(res.data.pending_session_id || null)
         setShowPendingConfirmation(true)
         setTranscript([{
           id: crypto.randomUUID(),
@@ -68,7 +72,7 @@ export default function AssessmentPage() {
         setTranscript([{
           id: crypto.randomUUID(),
           role: 'SYSTEM',
-          content: "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?"
+          content: getRandomPrompt('greetings')
         }])
       }
     },
@@ -109,27 +113,31 @@ export default function AssessmentPage() {
     mutationFn: (symptoms: string[]) => assessmentApi.submitSymptoms(sessionId!, symptoms),
     onSuccess: (res) => {
       setShowSymptomChips(false)
-      if (!res.data.next_question) {
-        setSufficientInfoConfirmation(true)
-        setTranscript(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'SYSTEM',
-          content: "I think I have enough information to prepare your assessment. Before I summarise everything, is there anything else you've noticed or would like to mention?"
-        }])
-      } else {
-        setCurrentQuestion(res.data.next_question)
-        setTranscript(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'SYSTEM',
-          content: res.data.next_question!.question_text_en
-        }])
-      }
+      setIsTypingSimulated(true)
+      setTimeout(() => {
+        setIsTypingSimulated(false)
+        if (!res.data.next_question) {
+          setSufficientInfoConfirmation(true)
+          setTranscript(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'SYSTEM',
+            content: getRandomPrompt('sufficientInfo')
+          }])
+        } else {
+          setCurrentQuestion(res.data.next_question)
+          setTranscript(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'SYSTEM',
+            content: res.data.next_question!.question_text_en
+          }])
+        }
+      }, 700)
     },
     onError: () => {
       setTranscript(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'SYSTEM',
-        content: "I couldn't find that symptom. Please try selecting one from the list or rephrase it."
+        content: getRandomPrompt('errors')
       }])
     }
   })
@@ -139,21 +147,25 @@ export default function AssessmentPage() {
     mutationFn: ({ answerText, nodeId }: { answerText: string; nodeId: string }) =>
       assessmentApi.submitAnswer(sessionId!, nodeId, answerText),
     onSuccess: (res) => {
-      if (res.data.is_completed) {
-        setSufficientInfoConfirmation(true)
-        setTranscript(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'SYSTEM',
-          content: "I think I have enough information to prepare your assessment. Before I summarise everything, is there anything else you've noticed or would like to mention?"
-        }])
-      } else if (res.data.next_question) {
-        setCurrentQuestion(res.data.next_question)
-        setTranscript(prev => [...prev, {
-          id: crypto.randomUUID(),
-          role: 'SYSTEM',
-          content: res.data.next_question!.question_text_en
-        }])
-      }
+      setIsTypingSimulated(true)
+      setTimeout(() => {
+        setIsTypingSimulated(false)
+        if (res.data.is_completed) {
+          setSufficientInfoConfirmation(true)
+          setTranscript(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'SYSTEM',
+            content: getRandomPrompt('sufficientInfo')
+          }])
+        } else if (res.data.next_question) {
+          setCurrentQuestion(res.data.next_question)
+          setTranscript(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'SYSTEM',
+            content: res.data.next_question!.question_text_en
+          }])
+        }
+      }, 600)
     },
     onError: () => {
       setTranscript(prev => [...prev, {
@@ -164,7 +176,7 @@ export default function AssessmentPage() {
     }
   })
 
-  const isThinking = startMutation.isPending || symptomsMutation.isPending || answerMutation.isPending
+  const isThinking = startMutation.isPending || symptomsMutation.isPending || answerMutation.isPending || isTypingSimulated
 
   const handleSymptomSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -192,10 +204,13 @@ export default function AssessmentPage() {
   }
 
   const handleRejectPending = () => {
+    if (pendingSessionId) {
+      assessmentApi.resolveSession(pendingSessionId).catch(console.error)
+    }
     setTranscript(prev => [
       ...prev,
       { id: crypto.randomUUID(), role: 'USER', content: "No, something else" },
-      { id: crypto.randomUUID(), role: 'SYSTEM', content: "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?" }
+      { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('greetings') }
     ])
     setShowPendingConfirmation(false)
     setShowSymptomChips(true)
@@ -209,8 +224,13 @@ export default function AssessmentPage() {
 
   const handleGenerateAssessment = () => {
     setSufficientInfoConfirmation(false)
-    completeSession()
-    navigate(`/assessment/${sessionId}/result`)
+    setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('transitions') }])
+    setIsTypingSimulated(true)
+    setTimeout(() => {
+      setIsTypingSimulated(false)
+      completeSession()
+      navigate(`/assessment/${sessionId}/result`)
+    }, 1500)
   }
 
   const handleAnswerSubmit = (answer: string | string[]) => {
@@ -255,7 +275,9 @@ export default function AssessmentPage() {
             </div>
           )}
 
-          {isThinking && <TypingIndicator />}
+          <div aria-live="polite">
+            {isThinking && <TypingIndicator />}
+          </div>
 
           {/* Spacer so last message isn't hidden behind input */}
           <div ref={chatEndRef} className="h-2" />
@@ -297,7 +319,7 @@ export default function AssessmentPage() {
                 <button
                   key={sym}
                   onClick={() => handleCommonSymptomClick(sym)}
-                  className="shrink-0 rounded-full border border-border bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary whitespace-nowrap"
+                  className="shrink-0 rounded-full border border-border bg-muted/50 px-4 py-2 text-[13px] font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary whitespace-nowrap"
                 >
                   {sym}
                 </button>
@@ -318,7 +340,8 @@ export default function AssessmentPage() {
               <button
                 type="submit"
                 disabled={!symptomInput.trim()}
-                className="absolute right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow transition-opacity disabled:opacity-30"
+                aria-label="Send symptom"
+                className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow transition-opacity disabled:opacity-30 active:scale-95"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>

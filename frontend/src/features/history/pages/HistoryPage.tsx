@@ -12,15 +12,15 @@ import { GuestBlock } from '@/components/common/GuestBlock'
 
 const STATUS_STYLE: Record<string, string> = {
   COMPLETED: 'bg-green-500/10 text-green-600 border-green-500/20',
-  IN_PROGRESS: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  ABANDONED: 'bg-muted/60 text-muted-foreground border-border',
+  ACTIVE: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  ARCHIVED: 'bg-muted/60 text-muted-foreground border-border',
   SYNCED: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
 }
 
 const STATUS_EMOJI: Record<string, string> = {
   COMPLETED: '✅',
-  IN_PROGRESS: '🔄',
-  ABANDONED: '❌',
+  ACTIVE: '🔄',
+  ARCHIVED: '📦',
   SYNCED: '☁️',
 }
 
@@ -70,7 +70,7 @@ export default function HistoryPage() {
           ←
         </button>
         <div className="min-w-0">
-          <h1 className="text-base font-bold text-foreground leading-tight">Assessment History</h1>
+          <h1 className="text-base font-bold text-foreground leading-tight">Health Conversations</h1>
           <p className="text-[11px] text-muted-foreground">{total} total session{total !== 1 ? 's' : ''}</p>
         </div>
         <Button
@@ -84,7 +84,7 @@ export default function HistoryPage() {
 
       {/* Filter Tabs */}
       <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
-        {['ALL', 'COMPLETED', 'IN_PROGRESS', 'ABANDONED'].map(f => (
+        {['ALL', 'ACTIVE', 'COMPLETED', 'ARCHIVED'].map(f => (
           <button
             key={f}
             onClick={() => { setFilter(f); setPage(1) }}
@@ -94,22 +94,24 @@ export default function HistoryPage() {
                 : 'bg-muted/50 text-muted-foreground border-border hover:bg-accent'
             }`}
           >
-            {f === 'ALL' ? 'All' : f === 'IN_PROGRESS' ? 'In Progress' : f.charAt(0) + f.slice(1).toLowerCase()}
+            {f === 'ALL' ? 'All' : f === 'ACTIVE' ? 'Active' : f.charAt(0) + f.slice(1).toLowerCase()}
           </button>
         ))}
       </div>
 
       {/* Session List */}
       {filtered.length === 0 ? (
-        <Card className="p-6 text-center">
-          <p className="text-2xl mb-2">📋</p>
-          <p className="text-sm font-medium text-foreground">No sessions found</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {filter === 'ALL' ? "You haven't done any triage yet." : `No ${filter.toLowerCase()} sessions.`}
+        <Card className="p-8 text-center border-dashed border-border/60 bg-gradient-to-b from-card to-muted/20">
+          <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <p className="text-2xl">🌱</p>
+          </div>
+          <p className="text-sm font-semibold text-foreground">Your health journey starts here</p>
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-[220px] mx-auto leading-relaxed">
+            {filter === 'ALL' ? "You haven't had any health conversations yet. We're ready when you are." : `No ${filter.toLowerCase()} conversations right now.`}
           </p>
           {filter === 'ALL' && (
-            <Button size="sm" className="mt-3 text-xs h-7 px-3" onClick={() => navigate('/assessment')}>
-              Start Triage
+            <Button size="sm" className="mt-6 text-xs h-9 px-6 rounded-full shadow-sm" onClick={() => navigate('/assessment')}>
+              Start a Conversation
             </Button>
           )}
         </Card>
@@ -133,19 +135,25 @@ export default function HistoryPage() {
                       {emoji}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-foreground">
-                        {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      <p className="text-xs font-semibold text-foreground truncate">
+                        {session.title || 'General Health Conversation'}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}
                         {date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                        {session.consultation_mode ? ` · ${session.consultation_mode.toLowerCase()}` : ''}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${statusStyle}`}>
-                      {session.status === 'IN_PROGRESS' ? 'Active' : session.status.charAt(0) + session.status.slice(1).toLowerCase()}
+                      {session.status === 'ACTIVE' ? 'Active' : session.status.charAt(0) + session.status.slice(1).toLowerCase()}
                     </span>
+                    {session.severity_code && (
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border`}>
+                         {session.severity_code}
+                      </span>
+                    )}
                     {session.status === 'COMPLETED' && (
                       <Button
                         size="sm"
@@ -153,16 +161,16 @@ export default function HistoryPage() {
                         className="text-[10px] h-6 px-1.5"
                         onClick={() => navigate(`/assessment/${session.id}/result`)}
                       >
-                        View
+                        Reopen
                       </Button>
                     )}
-                    {session.status === 'IN_PROGRESS' && (
+                    {session.status === 'ACTIVE' && (
                       <Button
                         size="sm"
                         className="text-[10px] h-6 px-1.5"
-                        onClick={() => navigate(`/assessment`)}
+                        onClick={() => navigate(`/assessment?resume=true&sessionId=${session.id}`)}
                       >
-                        Resume
+                        Continue
                       </Button>
                     )}
                   </div>

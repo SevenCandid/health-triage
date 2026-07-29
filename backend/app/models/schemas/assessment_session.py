@@ -10,7 +10,7 @@ from app.models.assessment_session import SessionStatus, ConsultationMode
 class AssessmentSessionCreate(BaseModel):
     user_id: Optional[str] = None
     symptom_id: Optional[str] = None
-    status: SessionStatus = SessionStatus.IN_PROGRESS
+    status: SessionStatus = SessionStatus.ACTIVE
     consultation_mode: ConsultationMode = ConsultationMode.TEXT
     language_code: str = Field(default="en", max_length=10)
     created_offline: bool = False

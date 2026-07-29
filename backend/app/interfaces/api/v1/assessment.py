@@ -65,7 +65,7 @@ async def start_assessment(
     user_id: Optional[str] = Depends(get_optional_user_id),
 ) -> AssessmentStartResponse:
     """Creates a new assessment session record."""
-    sess, pending_symptom = await service.start_session(
+    sess, pending_symptom, pending_symptom_slug, pending_session_id = await service.start_session(
         language_code=payload.language_code,
         consultation_mode=payload.consultation_mode,
         created_offline=payload.created_offline,
@@ -78,6 +78,8 @@ async def start_assessment(
         consultation_mode=sess.consultation_mode,
         created_at=sess.conducted_at,
         pending_symptom=pending_symptom,
+        pending_symptom_slug=pending_symptom_slug,
+        pending_session_id=pending_session_id,
     )
 
 
@@ -207,6 +209,8 @@ async def get_assessment_history(
                 "id": s.id,
                 "status": s.status.value if s.status else None,
                 "severity_level_id": s.severity_level_id,
+                "severity_code": s.severity_level.code if s.severity_level else None,
+                "title": f"Conversation about {s.symptom.name_en}" if s.symptom else "General Health Conversation",
                 "consultation_mode": s.consultation_mode.value if s.consultation_mode else None,
                 "created_at": s.conducted_at.isoformat() if s.conducted_at else None,
             })
@@ -308,6 +312,24 @@ async def restart_assessment(
         new_session_id=new_sess.id,
         status=new_sess.status,
     )
+
+
+@router.post(
+    "/{session_id}/resolve",
+    summary="Resolve a past assessment session",
+    description="Archives the session so it is no longer considered active/pending.",
+)
+async def resolve_assessment(
+    session_id: str,
+    service: Annotated[TriageService, Depends(get_triage_service)],
+):
+    """Marks a session as resolved/archived."""
+    try:
+        await service.resolve_session(session_id)
+        return {"status": "success"}
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
 
 
 @router.get(

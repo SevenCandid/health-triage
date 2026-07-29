@@ -46,13 +46,14 @@ class TriageService:
         logger.info(f"Starting new assessment session. Mode: {consultation_mode}, Lang: {language_code}")
         
         pending_symptom = None
+        pending_symptom_slug = None
         if user_id:
-            one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
+            seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
             recent_sess_res = await self.session.execute(
                 select(AssessmentSessionModel)
                 .where(
                     AssessmentSessionModel.user_id == user_id,
-                    AssessmentSessionModel.conducted_at >= one_day_ago,
+                    AssessmentSessionModel.conducted_at >= seven_days_ago,
                     AssessmentSessionModel.symptom_id.isnot(None),
                     AssessmentSessionModel.is_deleted == False
                 )
@@ -67,11 +68,13 @@ class TriageService:
                 sym = sym_res.scalar_one_or_none()
                 if sym:
                     pending_symptom = sym.name_en
+                    pending_symptom_slug = sym.slug
+                    pending_session_id = recent_sess.id
 
         sess = AssessmentSessionModel(
             id=str(uuid.uuid4()),
             user_id=user_id,
-            status=SessionStatus.IN_PROGRESS,
+            status=SessionStatus.ACTIVE,
             consultation_mode=consultation_mode,
             language_code=language_code,
             created_offline=created_offline,
@@ -81,7 +84,7 @@ class TriageService:
         self.session.add(sess)
         await self.session.flush()
         await self.session.refresh(sess)
-        return sess, pending_symptom
+        return sess, pending_symptom, pending_symptom_slug, pending_session_id
 
     async def set_symptoms(
         self,
@@ -209,14 +212,14 @@ class TriageService:
         if not sess:
             raise ValueError(f"Assessment session '{session_id}' not found.")
 
-        # Mark previous session as ABANDONED
-        sess.status = SessionStatus.ABANDONED
+        # Mark previous session as ARCHIVED
+        sess.status = SessionStatus.ARCHIVED
 
         # Create new session
         new_sess = AssessmentSessionModel(
             id=str(uuid.uuid4()),
             user_id=sess.user_id,
-            status=SessionStatus.IN_PROGRESS,
+            status=SessionStatus.ACTIVE,
             consultation_mode=sess.consultation_mode,
             language_code=sess.language_code,
             created_offline=sess.created_offline,
@@ -227,6 +230,20 @@ class TriageService:
         await self.session.flush()
         await self.session.refresh(new_sess)
         return new_sess
+
+    async def resolve_session(self, session_id: str) -> None:
+        """Marks a session as ARCHIVED so it doesn't show up in recent contexts."""
+        sess_res = await self.session.execute(
+            select(AssessmentSessionModel).where(
+                AssessmentSessionModel.id == session_id,
+                AssessmentSessionModel.is_deleted == False
+            )
+        )
+        sess = sess_res.scalar_one_or_none()
+        if not sess:
+            raise ValueError(f"Assessment session '{session_id}' not found.")
+        sess.status = SessionStatus.ARCHIVED
+        await self.session.flush()
 
     async def evaluate_assessment_session(
         self,
@@ -323,6 +340,10 @@ class TriageService:
         """Retrieves paginated triage session history for a user."""
         result = await self.session.execute(
             select(AssessmentSessionModel)
+            .options(
+                selectinload(AssessmentSessionModel.symptom),
+                selectinload(AssessmentSessionModel.severity_level),
+            )
             .where(
                 AssessmentSessionModel.user_id == user_id,
                 AssessmentSessionModel.is_deleted == False,

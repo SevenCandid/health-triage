@@ -21,26 +21,28 @@ export function LoadingSpinner({
   fullScreen = false,
 }: LoadingSpinnerProps) {
   const spinner = (
-    <div className={cn('flex flex-col items-center justify-center gap-3', className)}>
+    <div className={cn('flex flex-col items-center justify-center gap-4', className)}>
       <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+        animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
         className={cn(
-          'rounded-full border-border border-t-primary',
-          sizeMap[size]
+          'rounded-full bg-primary/20 flex items-center justify-center',
+          sizeMap[size].replace('border-2', '').replace('border-4', '')
         )}
         role="status"
         aria-label={label}
-      />
+      >
+        <div className="w-1/2 h-1/2 rounded-full bg-primary/80" />
+      </motion.div>
       {label && (
-        <p className="text-sm text-muted-foreground animate-pulse">{label}</p>
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">{label}</p>
       )}
     </div>
   )
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 backdrop-blur-md">
         {spinner}
       </div>
     )

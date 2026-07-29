@@ -23,6 +23,8 @@ class AssessmentStartResponse(BaseModel):
     consultation_mode: ConsultationMode
     created_at: datetime
     pending_symptom: Optional[str] = None
+    pending_symptom_slug: Optional[str] = None
+    pending_session_id: Optional[str] = None
 
 
 class AssessmentSymptomsRequest(BaseModel):

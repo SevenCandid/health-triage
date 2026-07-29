@@ -139,8 +139,10 @@ export interface HealthProfile {
 
 export interface AssessmentSession {
   id: string
-  status: 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED' | 'SYNCED'
+  title?: string
+  status: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'SYNCED'
   severity_level_id?: string | null
+  severity_code?: string | null
   consultation_mode?: string | null
   created_at: string
 }
@@ -179,6 +181,8 @@ export interface StartAssessmentResponse {
   consultation_mode: string
   created_at: string
   pending_symptom?: string | null
+  pending_symptom_slug?: string | null
+  pending_session_id?: string | null
 }
 
 export interface SymptomsSubmitResponse {
