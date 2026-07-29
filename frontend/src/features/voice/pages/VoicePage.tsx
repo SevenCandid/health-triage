@@ -383,7 +383,6 @@ export default function VoicePage() {
 
     setVoiceState('PROCESSING')
     const sid = useAssessmentStore.getState().sessionId
-    const question = useAssessmentStore.getState().currentQuestion
     const completed = useAssessmentStore.getState().isComplete
 
     if (!sid) {

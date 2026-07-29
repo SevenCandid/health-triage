@@ -47,7 +47,6 @@ export default function AssessmentPage() {
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null)
   const [showPendingConfirmation, setShowPendingConfirmation] = useState(false)
   const [sufficientInfoConfirmation, setSufficientInfoConfirmation] = useState(false)
-  const [hasChosenToContinue, setHasChosenToContinue] = useState(false)
   const [isTypingSimulated, setIsTypingSimulated] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -223,7 +222,6 @@ export default function AssessmentPage() {
   const handleContinueTalking = () => {
     setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'USER', content: "Continue talking" }])
     setSufficientInfoConfirmation(false)
-    setHasChosenToContinue(true)
     setShowSymptomChips(true)
   }
 
