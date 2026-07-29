@@ -33,7 +33,11 @@ export default function LoginPage() {
       
       navigate('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Invalid credentials. Please try again.')
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        setError('You are offline. Please connect to the internet to log in, or continue as a guest.')
+      } else {
+        setError(err.response?.data?.detail || 'Invalid credentials. Please try again.')
+      }
     } finally {
       setIsLoading(false)
     }

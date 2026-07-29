@@ -56,7 +56,9 @@ export default function RegisterPage() {
       console.error('Registration error:', err)
       
       let errorMessage = 'Registration failed. Please try again.'
-      if (err.response?.data?.detail) {
+      if (err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+        errorMessage = 'You are offline. Please connect to the internet to create an account.'
+      } else if (err.response?.data?.detail) {
         // Handle FastAPI validation error array or string
         if (Array.isArray(err.response.data.detail)) {
           errorMessage = err.response.data.detail.map((e: any) => e.msg).join(' ')
