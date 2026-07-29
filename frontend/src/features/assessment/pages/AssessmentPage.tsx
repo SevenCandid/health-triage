@@ -47,6 +47,7 @@ export default function AssessmentPage() {
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null)
   const [showPendingConfirmation, setShowPendingConfirmation] = useState(false)
   const [sufficientInfoConfirmation, setSufficientInfoConfirmation] = useState(false)
+  const [hasChosenToContinue, setHasChosenToContinue] = useState(false)
   const [isTypingSimulated, setIsTypingSimulated] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -120,12 +121,27 @@ export default function AssessmentPage() {
       setTimeout(() => {
         setIsTypingSimulated(false)
         if (!res.data.next_question) {
-          setSufficientInfoConfirmation(true)
-          setTranscript(prev => [...prev, {
-            id: crypto.randomUUID(),
-            role: 'SYSTEM',
-            content: getRandomPrompt('sufficientInfo')
-          }])
+          if (hasChosenToContinue) {
+            // User already chose to continue once — auto-generate now
+            setTranscript(prev => [...prev, {
+              id: crypto.randomUUID(),
+              role: 'SYSTEM',
+              content: getRandomPrompt('transitions')
+            }])
+            setIsTypingSimulated(true)
+            setTimeout(() => {
+              setIsTypingSimulated(false)
+              completeSession()
+              navigate(`/assessment/${sessionId}/result`)
+            }, 1500)
+          } else {
+            setSufficientInfoConfirmation(true)
+            setTranscript(prev => [...prev, {
+              id: crypto.randomUUID(),
+              role: 'SYSTEM',
+              content: getRandomPrompt('sufficientInfo')
+            }])
+          }
         } else {
           setCurrentQuestion(res.data.next_question)
           setTranscript(prev => [...prev, {
@@ -222,6 +238,7 @@ export default function AssessmentPage() {
   const handleContinueTalking = () => {
     setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'USER', content: "Continue talking" }])
     setSufficientInfoConfirmation(false)
+    setHasChosenToContinue(true)
     setShowSymptomChips(true)
   }
 
