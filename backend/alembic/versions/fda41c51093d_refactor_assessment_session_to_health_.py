@@ -71,6 +71,7 @@ def upgrade() -> None:
     op.drop_index(op.f('ix_assessment_sessions_symptom_id'), table_name='assessment_sessions')
     op.drop_index(op.f('ix_assessment_sessions_user_id'), table_name='assessment_sessions')
     op.drop_table('assessment_sessions')
+    op.execute('DELETE FROM assessment_responses')
     op.add_column('assessment_responses', sa.Column('conversation_id', sa.String(length=36), nullable=False, comment='Parent health conversation UUID.'))
     op.add_column('assessment_responses', sa.Column('symptom_id', sa.String(length=36), nullable=True, comment='Symptom this response pertains to.'))
     op.drop_index(op.f('ix_assessment_responses_session_id'), table_name='assessment_responses')
