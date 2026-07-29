@@ -188,7 +188,15 @@ export default function AssessmentResultPage() {
     'chest-pain': 'Chest discomfort can happen for a variety of reasons, including acid reflux, muscle strain, stress, or cardiovascular factors.',
     'shortness-of-breath': 'Difficulty breathing may happen with physical exertion, anxiety, asthma, or respiratory conditions.',
   }
-  const generalInfo = SYMPTOM_INFO[symptomSlug] || 'Symptoms can be triggered by multiple factors, ranging from mild temporary changes to conditions that may need clinical evaluation.'
+  
+  // Combine information for all reported symptoms in the current session
+  const matchedInfo = currentSymptoms
+    .map(sym => SYMPTOM_INFO[sym.toLowerCase().replace(/\s+/g, '-')])
+    .filter(Boolean);
+
+  const generalInfo = matchedInfo.length > 0 
+    ? matchedInfo.join(' ') 
+    : SYMPTOM_INFO[symptomSlug] || 'Symptoms can be triggered by multiple factors, ranging from mild temporary changes to conditions that may need clinical evaluation.'
 
   // Parse explanation into bullet-point reasons
   const reasons = result.explanation
@@ -253,7 +261,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.1}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-2">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            💬 SECTION 1: What We Understood
+            💬 What We Understood
           </h2>
           <div className="text-xs text-muted-foreground space-y-1">
             <p>Reported Symptom: <span className="font-semibold text-foreground">{result.symptom_name || symptomName}</span></p>
@@ -274,7 +282,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.15}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            📖 SECTION 2: General Information
+            📖 General Information
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
             {generalInfo}
@@ -287,7 +295,7 @@ export default function AssessmentResultPage() {
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
             <span className="text-sm">🔬</span>
-            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 3: Why This Recommendation</h2>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Why This Recommendation</h2>
           </div>
           <div className="px-4 py-3 space-y-2">
             {reasons.length > 0 ? (
@@ -311,7 +319,7 @@ export default function AssessmentResultPage() {
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
             <span className="text-sm">🩹</span>
-            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 4: Self-care Suggestions</h2>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Self-care Suggestions</h2>
           </div>
           <ul className="divide-y divide-border/60">
             <li className="flex items-start gap-3 px-4 py-2 text-xs text-muted-foreground">
@@ -342,7 +350,7 @@ export default function AssessmentResultPage() {
       <Section delay={0.3}>
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden p-4 space-y-1.5">
           <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 uppercase tracking-wider">
-            ⚠️ SECTION 5: Warning Signs
+            ⚠️ Warning Signs
           </h2>
           <p className="text-xs text-muted-foreground leading-relaxed">
             Please seek immediate medical attention if you experience key warning signs such as:
@@ -381,7 +389,7 @@ export default function AssessmentResultPage() {
         <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-muted/30">
             <span className="text-sm">📋</span>
-            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">SECTION 6: Recommendation</h2>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Recommendation</h2>
           </div>
           <div className="p-4 space-y-3">
             <div className={`p-3 rounded-xl bg-gradient-to-br ${cfg.gradient} text-white`}>
@@ -392,7 +400,7 @@ export default function AssessmentResultPage() {
             
             {result.recommendations?.length > 0 && (
               <div className="space-y-1.5">
-                <p className="text-xs font-bold text-foreground">Actions Recommended by Rule Engine:</p>
+                <p className="text-xs font-bold text-foreground">Actions Recommended:</p>
                 {result.recommendations.map((rec: string, i: number) => (
                   <p key={i} className="text-xs text-muted-foreground flex gap-2">
                     <span>•</span> <span>{rec}</span>
