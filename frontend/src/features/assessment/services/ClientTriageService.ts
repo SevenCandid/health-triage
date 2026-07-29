@@ -1,5 +1,6 @@
 import { dbService, type KnowledgeBaseData } from '../../../services/DatabaseService'
 import { ClientRuleEngine, type TriageRule, type UrgencyCode } from './ClientRuleEngine'
+import fallbackKnowledgeBase from '../../../../public/data/knowledge.json'
 
 export class ClientTriageService {
   /**
@@ -57,7 +58,12 @@ export class ClientTriageService {
    */
   private static async evaluateConversation(sessionId: string) {
     const conversation = await dbService.getConversation(sessionId)
-    const kb = await dbService.getKnowledgeBase()
+    let kb = await dbService.getKnowledgeBase()
+
+    if (!kb) {
+      console.warn("Using bundled static knowledge base for offline triage.")
+      kb = fallbackKnowledgeBase as any
+    }
 
     if (!conversation || !kb) {
       throw new Error('Missing conversation or offline knowledge base data')
