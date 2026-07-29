@@ -146,6 +146,7 @@ export default function AssessmentResultPage() {
   const navigate = useNavigate()
   const { userRole, clearAuth } = useAuthStore()
   const currentSymptoms = useAssessmentStore((s) => s.currentSymptoms)
+  const isOnline = useNetworkStore(s => s.isOnline)
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['assessmentResult', sessionId],
@@ -208,7 +209,6 @@ export default function AssessmentResultPage() {
         .slice(0, 5)
     : []
 
-  const isOnline = useNetworkStore(s => s.isOnline)
 
   return (
     <div className="mx-auto max-w-md px-3 pt-3 pb-24 space-y-4">
