@@ -105,12 +105,12 @@ export default function VoicePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const speakText = useCallback((text: string, onEnd?: () => void) => {
+  const speakText = useCallback((text: string, onEnd?: () => void, displayText?: string) => {
     if (!isComponentMounted.current) return
 
     window.speechSynthesis.cancel()
     setVoiceState('SPEAKING')
-    setSystemMessage(text)
+    setSystemMessage(displayText !== undefined ? displayText : text)
 
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = speechRate.current
@@ -143,22 +143,27 @@ export default function VoicePage() {
     onSuccess: (res) => {
       startSession(res.data.session_id)
       
-      let intro = ""
+      let textToSpeak = ""
+      let textToDisplay = ""
       if (!hasReadNotice) {
         setShowAssessmentNotice(true)
-        intro += "Health Guidance Notice. This assessment provides health guidance based on the information you share. It is not a medical diagnosis and does not replace care from a qualified healthcare professional. "
+        textToSpeak += "Health Guidance Notice. This assessment provides health guidance based on the information you share. It is not a medical diagnosis and does not replace care from a qualified healthcare professional. "
         setHasReadNotice(true)
       }
 
       if (res.data.pending_symptom) {
-        intro += `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+        const t = `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+        textToSpeak += t
+        textToDisplay = t
       } else {
-        intro += "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+        const t = "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+        textToSpeak += t
+        textToDisplay = t
       }
       
-      speakText(intro, () => {
+      speakText(textToSpeak, () => {
         startListening()
-      })
+      }, textToDisplay)
     },
     onError: () => {
       setVoiceState('IDLE')
@@ -471,18 +476,18 @@ export default function VoicePage() {
       </div>
 
       {/* Controls */}
-      <div className="flex gap-3 sm:gap-4 flex-shrink-0 mb-4 sm:mb-8">
+      <div className="flex gap-3 sm:gap-4 flex-shrink-0 mb-4 sm:mb-8 w-full justify-center px-4">
         {voiceState === 'IDLE' ? (
-          <Button size="lg" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={startListening}>
+          <Button className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={startListening}>
             Tap to Speak
           </Button>
         ) : voiceState === 'LISTENING' ? (
-           <Button size="lg" variant="outline" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={stopListening}>
+           <Button variant="outline" className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={stopListening}>
              Pause
            </Button>
         ) : null}
         
-        <Button size="lg" variant="danger" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={handleEndTriage}>
+        <Button variant="danger" className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={handleEndTriage}>
           End Triage
         </Button>
       </div>
