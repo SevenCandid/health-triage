@@ -21,6 +21,16 @@ export function usePWAInstall() {
       setIsInstalled(true)
     }
 
+    const checkPrompt = () => {
+      const globalPrompt = (window as any).deferredPrompt
+      if (globalPrompt) {
+        setDeferredPrompt(globalPrompt)
+        setIsInstallable(true)
+      }
+    }
+    
+    checkPrompt() // Check immediately in case it already fired
+
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault()
@@ -36,10 +46,12 @@ export function usePWAInstall() {
       setIsInstalled(true)
     }
 
+    window.addEventListener('pwa-installable', checkPrompt)
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     window.addEventListener('appinstalled', handleAppInstalled)
 
     return () => {
+      window.removeEventListener('pwa-installable', checkPrompt)
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('appinstalled', handleAppInstalled)
     }
