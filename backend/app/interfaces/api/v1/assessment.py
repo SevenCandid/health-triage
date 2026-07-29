@@ -207,12 +207,12 @@ async def get_assessment_history(
         for s in sessions:
             items.append({
                 "id": s.id,
-                "status": s.status.value if s.status else None,
+                "status": s.status.value if hasattr(s.status, "value") else s.status,
                 "severity_level_id": s.severity_level_id,
                 "severity_code": s.severity_level.code if s.severity_level else None,
                 "title": f"Conversation about {s.symptom.name_en}" if s.symptom else "General Health Conversation",
-                "consultation_mode": s.consultation_mode.value if s.consultation_mode else None,
-                "created_at": s.conducted_at.isoformat() if s.conducted_at else None,
+                "consultation_mode": s.consultation_mode.value if hasattr(s.consultation_mode, "value") else s.consultation_mode,
+                "created_at": s.conducted_at.isoformat() if hasattr(s.conducted_at, "isoformat") else str(s.conducted_at),
             })
             
         return {
