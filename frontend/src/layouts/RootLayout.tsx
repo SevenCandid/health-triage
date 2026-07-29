@@ -2,6 +2,7 @@ import { Outlet } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { OfflineBanner } from '@/components/common/OfflineBanner'
+import { InstallNotice } from '@/components/common/InstallNotice'
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { useTheme } from '@/hooks/use-theme'
 
@@ -25,6 +26,7 @@ export function RootLayout() {
     <div className="flex min-h-screen flex-col bg-background">
       <OfflineBanner />
       <Navbar />
+      <InstallNotice />
 
       {/* Page content */}
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-12 sm:px-6 lg:px-8">
