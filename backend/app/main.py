@@ -88,9 +88,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     if settings.ENVIRONMENT == "production":
         import subprocess
+        import sys
         logger.info("Production mode: Running Alembic migrations...")
         try:
-            subprocess.run(["alembic", "upgrade", "head"], check=True)
+            subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
             logger.info("Alembic migrations completed successfully.")
         except subprocess.CalledProcessError as e:
             logger.error(f"Alembic migrations failed: {e}")
