@@ -146,25 +146,22 @@ export default function HistoryPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${statusStyle}`}>
-                      {session.status === 'ACTIVE' ? 'Active' : session.status.charAt(0) + session.status.slice(1).toLowerCase()}
-                    </span>
-                    {session.severity_code && (
-                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border`}>
-                         {session.severity_code}
-                      </span>
-                    )}
                     {session.status === 'COMPLETED' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-[10px] h-6 px-1.5"
-                        onClick={() => navigate(`/assessment/${session.id}/result`)}
-                      >
-                        Reopen
-                      </Button>
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500 shrink-0">
+                          <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-[10px] h-6 px-2"
+                          onClick={() => navigate(`/assessment/${session.id}/result`)}
+                        >
+                          Reopen
+                        </Button>
+                      </>
                     )}
-                    {session.status === 'ACTIVE' && (
+                    {(session.status === 'ACTIVE' || session.status === 'IN_PROGRESS') && (
                       <Button
                         size="sm"
                         className="text-[10px] h-6 px-1.5"
