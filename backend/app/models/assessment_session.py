@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 class SessionStatus(str, enum.Enum):
     """Lifecycle status of an assessment session."""
 
+    IN_PROGRESS = "IN_PROGRESS"    # Legacy status for active sessions
     ACTIVE = "ACTIVE"              # Questions still being answered / Active conversation
     COMPLETED = "COMPLETED"        # Full evaluation completed
     ARCHIVED = "ARCHIVED"          # User closed before completion or manually archived
