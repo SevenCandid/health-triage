@@ -43,6 +43,7 @@ export default function VoicePage() {
   const [systemMessage, setSystemMessage] = useState('')
   const [hasReadNotice, setHasReadNotice] = useState(false)
   const [showAssessmentNotice, setShowAssessmentNotice] = useState(false)
+  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false)
   
   // Refs to manage native API instances
   const recognitionRef = useRef<any>(null)
@@ -217,12 +218,14 @@ export default function VoicePage() {
            }
         })
       } else if (res.data.is_completed) {
-        handleCompletion()
+         setIsConfirmingCompletion(true)
+         speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
         askQuestion(res.data.next_question.question_text_en)
       } else {
          // No next question, meaning it's ready for assessment generation.
+         setIsConfirmingCompletion(true)
          speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
       }
     },
@@ -239,6 +242,7 @@ export default function VoicePage() {
       assessmentApi.submitAnswer(sid, nodeId, answerText),
     onSuccess: (res) => {
       if (res.data.is_completed) {
+        setIsConfirmingCompletion(true)
         speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
@@ -403,18 +407,29 @@ export default function VoicePage() {
     }
     
     // Check for confirmations to "I think I have enough information..."
-    if (!question) {
-        if (lowerText === 'yes' || lowerText === 'yeah' || lowerText === 'no' || lowerText === 'nope' || lowerText.includes('no more') || lowerText.includes('thats all')) {
-             if (lowerText === 'yes' || lowerText === 'yeah') {
-                 speakText("Okay, please tell me what else you're experiencing.", () => startListening())
-             } else {
-                 handleCompletion()
-             }
-             return
+    if (isConfirmingCompletion) {
+        setIsConfirmingCompletion(false)
+        const noIntents = ['no', 'nope', 'nothing', 'thats all', 'no more', 'none', 'nah', "no i dont", "no i am not", "i dont think so", "nothing else"]
+        const pureYesIntents = ['yes', 'yeah', 'yep', 'yup', 'i do', 'sure', 'yes i do']
+        
+        const cleanResponse = lowerText.replace(/[']/g, '')
+        
+        if (noIntents.some(no => cleanResponse === no || cleanResponse.startsWith(no))) {
+            handleCompletion()
+            return
         }
+        
+        if (pureYesIntents.some(yes => cleanResponse === yes)) {
+            speakText("Okay, please tell me what else you're experiencing.", () => startListening())
+            return
+        }
+
+        // If they said something else (e.g. "Yes, I also have a headache" or just "My head hurts"),
+        // treat it as the new symptom to evaluate and fall through to symptomsMutation.
+        setCurrentQuestion(null)
     }
 
-    if (!question) {
+    if (!useAssessmentStore.getState().currentQuestion) {
       // Initial symptom phase
       symptomsMutation.mutate({ sid, symptoms: [text] })
     } else {
