@@ -33,6 +33,7 @@ interface AssessmentState extends AssessmentSession {
   setResult: (result: AssessmentSession['result']) => void
   completeSession: () => void
   resetSession: () => void
+  resumeSession: () => void
 }
 
 const initialSession: AssessmentSession = {
@@ -67,6 +68,8 @@ export const useAssessmentStore = create<AssessmentState>()(
       completeSession: () => set({ isComplete: true, currentQuestion: null }),
 
       resetSession: () => set(initialSession),
+
+      resumeSession: () => set({ isComplete: false }),
     }),
     {
       name: 'health-triage-assessment',

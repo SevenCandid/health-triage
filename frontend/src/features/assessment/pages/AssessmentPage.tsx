@@ -36,7 +36,8 @@ export default function AssessmentPage() {
     setCurrentQuestion,
     setSymptoms,
     completeSession,
-    resetSession
+    resetSession,
+    resumeSession,
   } = useAssessmentStore()
 
   const [transcript, setTranscript] = useState<ChatMessage[]>([])
@@ -87,6 +88,8 @@ export default function AssessmentPage() {
     const isResuming = queryParams.get('resume') === 'true'
 
     if (isResuming && sessionId) {
+      // Mark session as active so the input area is visible
+      resumeSession()
       assessmentApi.getConversationTranscript(sessionId)
         .then(res => {
           const msgs = res.data.messages.map(m => ({
