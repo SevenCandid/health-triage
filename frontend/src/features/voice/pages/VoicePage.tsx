@@ -1,4 +1,4 @@
-import { Mic } from 'lucide-react'
+import { Mic, Volume2 } from 'lucide-react'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
@@ -33,7 +33,7 @@ export default function VoicePage() {
     isComplete
   } = useAssessmentStore()
   
-  const { preferredVoiceURI } = useSettingsStore()
+  const { preferredVoiceURI, voiceRate, voicePitch, voiceVolume, autoReadResponses, handsFreeMode, appLanguage } = useSettingsStore()
 
   if (userRole === 'GUEST') {
     return <GuestBlock featureName="Voice Consultation" icon=<Mic className="w-4 h-4" /> />
@@ -49,7 +49,6 @@ export default function VoicePage() {
   // Refs to manage native API instances
   const recognitionRef = useRef<any>(null)
   const isComponentMounted = useRef(true)
-  const speechRate = useRef(1)
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -57,7 +56,14 @@ export default function VoicePage() {
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition()
       recognition.continuous = false
-      recognition.lang = 'en-US'
+      const localeMap: Record<string, string> = {
+        'en': 'en-US',
+        'tw': 'tw-GH',
+        'fr': 'fr-FR',
+        'ar': 'ar-SA',
+        'pt': 'pt-PT'
+      }
+      recognition.lang = localeMap[appLanguage] || 'en-US'
       recognition.interimResults = true
       recognition.maxAlternatives = 1
 
@@ -111,33 +117,61 @@ export default function VoicePage() {
     if (!isComponentMounted.current) return
 
     window.speechSynthesis.cancel()
-    setVoiceState('SPEAKING')
     setSystemMessage(displayText !== undefined ? displayText : text)
 
+    const handleEnd = () => {
+      if (!isComponentMounted.current) return
+      setVoiceState('IDLE')
+      if (onEnd) {
+         if (onEnd.toString().includes('startListening') && !handsFreeMode) {
+             // Do not automatically start listening if hands-free is off
+         } else {
+             onEnd()
+         }
+      }
+    }
+
+    if (!autoReadResponses) {
+      setVoiceState('IDLE')
+      // Brief delay to allow UI to render before we potentially start listening
+      setTimeout(handleEnd, 100)
+      return
+    }
+
+    setVoiceState('SPEAKING')
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = speechRate.current
+    utterance.rate = voiceRate
+    utterance.pitch = voicePitch
+    utterance.volume = voiceVolume
     
-    // Apply preferred voice if exists
     if (preferredVoiceURI) {
       const voices = window.speechSynthesis.getVoices()
       const selected = voices.find(v => v.voiceURI === preferredVoiceURI)
       if (selected) utterance.voice = selected
     }
 
-    utterance.onend = () => {
-      if (!isComponentMounted.current) return
-      setVoiceState('IDLE')
-      if (onEnd) onEnd()
-    }
-
-    utterance.onerror = () => {
-      if (!isComponentMounted.current) return
-      setVoiceState('IDLE')
-      if (onEnd) onEnd()
-    }
+    utterance.onend = handleEnd
+    utterance.onerror = handleEnd
 
     window.speechSynthesis.speak(utterance)
-  }, [preferredVoiceURI])
+  }, [preferredVoiceURI, voiceRate, voicePitch, voiceVolume, autoReadResponses, handsFreeMode])
+
+  const manualSpeak = () => {
+     window.speechSynthesis.cancel()
+     setVoiceState('SPEAKING')
+     const utterance = new SpeechSynthesisUtterance(systemMessage)
+     utterance.rate = voiceRate
+     utterance.pitch = voicePitch
+     utterance.volume = voiceVolume
+     if (preferredVoiceURI) {
+       const voices = window.speechSynthesis.getVoices()
+       const selected = voices.find(v => v.voiceURI === preferredVoiceURI)
+       if (selected) utterance.voice = selected
+     }
+     utterance.onend = () => { setVoiceState('IDLE') }
+     utterance.onerror = () => { setVoiceState('IDLE') }
+     window.speechSynthesis.speak(utterance)
+  }
 
   // 1. Start Session Mutation
   const startMutation = useMutation({
@@ -292,6 +326,7 @@ export default function VoicePage() {
 
   const startListening = () => {
     if (recognitionRef.current && isComponentMounted.current) {
+      window.speechSynthesis.cancel() // Barge-in support
       setVoiceState('LISTENING')
       setTranscriptText('')
       try {
@@ -340,11 +375,11 @@ export default function VoicePage() {
              speakText(systemMessage, () => startListening())
              break;
           case 'SPEECH_SLOWER':
-             speechRate.current = Math.max(0.5, speechRate.current - 0.25)
+             useSettingsStore.getState().setVoiceRate(Math.max(0.5, useSettingsStore.getState().voiceRate - 0.25))
              speakText("I will speak slower. " + systemMessage, () => startListening())
              break;
           case 'SPEECH_FASTER':
-             speechRate.current = Math.min(2.0, speechRate.current + 0.25)
+             useSettingsStore.getState().setVoiceRate(Math.min(2.0, useSettingsStore.getState().voiceRate + 0.25))
              speakText("I will speak faster. " + systemMessage, () => startListening())
              break;
           case 'NAV_BACK':
@@ -459,7 +494,7 @@ export default function VoicePage() {
       )}
 
       {/* Dynamic System Message */}
-      <div className="mt-2 sm:mt-6 min-h-[4rem] sm:min-h-[5rem] flex items-center justify-center flex-shrink-0 px-2 w-full">
+      <div className="mt-2 sm:mt-6 min-h-[4rem] sm:min-h-[5rem] flex flex-col items-center justify-center flex-shrink-0 px-2 w-full gap-2">
         {voiceState === 'SPEAKING' && (
           <h2 className="text-lg sm:text-2xl font-semibold text-foreground animate-pulse">
             {systemMessage}
@@ -474,6 +509,18 @@ export default function VoicePage() {
           <h2 className="text-lg sm:text-2xl font-semibold text-muted-foreground">
             Thinking...
           </h2>
+        )}
+        {voiceState === 'IDLE' && systemMessage && (
+          <>
+            <h2 className="text-lg sm:text-2xl font-semibold text-foreground">
+              {systemMessage}
+            </h2>
+            {!autoReadResponses && (
+              <Button variant="ghost" size="sm" onClick={manualSpeak} className="rounded-full text-muted-foreground">
+                 <Volume2 className="w-4 h-4 mr-2" /> Read Aloud
+              </Button>
+            )}
+          </>
         )}
       </div>
 

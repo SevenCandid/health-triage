@@ -122,21 +122,41 @@ function FontSizeSelector() {
 
 function VoiceSettings() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const { preferredVoiceURI, setVoice } = useSettingsStore()
+  const { 
+    preferredVoiceURI, setVoice,
+    voiceRate, setVoiceRate,
+    voicePitch, setVoicePitch,
+    voiceVolume, setVoiceVolume,
+    autoReadResponses, setAutoReadResponses,
+    handsFreeMode, setHandsFreeMode,
+    appLanguage
+  } = useSettingsStore()
 
   useEffect(() => {
     const load = () => {
       const all = window.speechSynthesis.getVoices()
-      setVoices(all.filter(v => v.lang.startsWith('en')))
+      // Filter voices based on appLanguage. If tw, there might not be any, so fallback to all or en.
+      let filtered = all.filter(v => v.lang.toLowerCase().startsWith(appLanguage))
+      if (filtered.length === 0 && appLanguage !== 'en') {
+        // Fallback to English if no voices for selected language
+        filtered = all.filter(v => v.lang.toLowerCase().startsWith('en'))
+      }
+      if (filtered.length === 0) {
+         filtered = all // Ultimate fallback
+      }
+      setVoices(filtered)
     }
     load()
     window.speechSynthesis.onvoiceschanged = load
     return () => { window.speechSynthesis.onvoiceschanged = null }
-  }, [])
+  }, [appLanguage])
 
   const testVoice = () => {
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance("Hi! I'm your Health Triage Assistant.")
+    u.rate = voiceRate
+    u.pitch = voicePitch
+    u.volume = voiceVolume
     if (preferredVoiceURI) {
       const v = voices.find(v => v.voiceURI === preferredVoiceURI)
       if (v) u.voice = v
@@ -157,6 +177,33 @@ function VoiceSettings() {
             <option key={v.voiceURI} value={v.voiceURI}>{v.name.slice(0, 22)}</option>
           ))}
         </select>
+      </SettingsRow>
+      <div className="px-5 py-3 border-b border-border/50">
+         <div className="flex justify-between text-sm font-medium mb-2">
+            <span>Speech Rate</span>
+            <span className="text-muted-foreground">{voiceRate.toFixed(1)}x</span>
+         </div>
+         <input type="range" min="0.5" max="2.0" step="0.1" value={voiceRate} onChange={e => setVoiceRate(parseFloat(e.target.value))} className="w-full accent-primary" />
+      </div>
+      <div className="px-5 py-3 border-b border-border/50">
+         <div className="flex justify-between text-sm font-medium mb-2">
+            <span>Pitch</span>
+            <span className="text-muted-foreground">{voicePitch.toFixed(1)}</span>
+         </div>
+         <input type="range" min="0.0" max="2.0" step="0.1" value={voicePitch} onChange={e => setVoicePitch(parseFloat(e.target.value))} className="w-full accent-primary" />
+      </div>
+      <div className="px-5 py-3 border-b border-border/50">
+         <div className="flex justify-between text-sm font-medium mb-2">
+            <span>Volume</span>
+            <span className="text-muted-foreground">{Math.round(voiceVolume * 100)}%</span>
+         </div>
+         <input type="range" min="0.0" max="1.0" step="0.1" value={voiceVolume} onChange={e => setVoiceVolume(parseFloat(e.target.value))} className="w-full accent-primary" />
+      </div>
+      <SettingsRow label="Auto Read Responses" description="Automatically speak assistant replies">
+         <Toggle value={autoReadResponses} onChange={setAutoReadResponses} />
+      </SettingsRow>
+      <SettingsRow label="Hands-Free Mode" description="Automatically start listening after speaking">
+         <Toggle value={handsFreeMode} onChange={setHandsFreeMode} />
       </SettingsRow>
       <SettingsRow label="Test Voice" description="Hear how the assistant will sound">
         <button onClick={testVoice} className="text-sm text-primary font-medium hover:underline">
