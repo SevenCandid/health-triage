@@ -7,15 +7,7 @@ import { useNetworkStore } from '@/stores/network-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { usePWAInstall } from '@/hooks/use-pwa-install'
-
-const navItems = [
-  { to: '/dashboard', label: 'Assess', icon: '🏠' },
-  { to: '/insights', label: 'Insights', icon: '📊' },
-  { to: '/history', label: 'History', icon: '📜' },
-  { to: '/emergency', label: 'Emergency', icon: '🚨' },
-  { to: '/profile', label: 'Profile', icon: '👤' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
-]
+import { navItems } from '@/components/layout/Sidebar'
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,29 +38,7 @@ export function Navbar() {
           <span>Triage Assistant</span>
         </NavLink>
 
-        {/* Desktop Nav */}
-        {isAuthenticated && (
-          <ul className="hidden md:flex items-center gap-1">
-            {activeItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  className={({ isActive }) =>
-                    cn(
-                      'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-accent text-accent-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-foreground'
-                    )
-                  }
-                >
-                  <span>{item.icon}</span>
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Desktop Nav (Moved to Sidebar) */}
 
         {/* Right Controls */}
         <div className="flex items-center gap-2">

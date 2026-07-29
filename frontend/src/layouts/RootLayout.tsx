@@ -3,6 +3,7 @@ import { Navbar } from '@/components/layout/Navbar'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { OfflineBanner } from '@/components/common/OfflineBanner'
 import { InstallNotice } from '@/components/common/InstallNotice'
+import { Sidebar } from '@/components/layout/Sidebar'
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { useTheme } from '@/hooks/use-theme'
 
@@ -28,10 +29,14 @@ export function RootLayout() {
       <Navbar />
       <InstallNotice />
 
-      {/* Page content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-12 sm:px-6 lg:px-8">
-        <Outlet />
-      </main>
+      <div className="mx-auto w-full max-w-7xl flex flex-1 overflow-hidden">
+        <Sidebar />
+        
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto px-4 py-6 pb-20 md:pb-12 sm:px-6 lg:px-8">
+          <Outlet />
+        </main>
+      </div>
 
       <BottomTabBar />
     </div>
