@@ -144,6 +144,7 @@ export default function AssessmentResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
   const { userRole, clearAuth } = useAuthStore()
+  const currentSymptoms = useAssessmentStore((s) => s.currentSymptoms)
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['assessmentResult', sessionId],
@@ -177,7 +178,6 @@ export default function AssessmentResultPage() {
   const cfg = RISK[severity] ?? RISK['GREEN']
   const isEmergency = result.is_emergency || severity === 'RED' || severity === 'EMERGENCY'
 
-  const currentSymptoms = useAssessmentStore((s) => s.currentSymptoms)
   const symptomName = currentSymptoms[0] || 'General Health Concern'
   const symptomSlug = (result.symptom_name || symptomName).toLowerCase().replace(/\s+/g, '-')
 
