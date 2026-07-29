@@ -32,6 +32,8 @@ from app.interfaces.schemas.assessment import (
     NextQuestionDTO,
     QuestionOptionDTO,
 )
+from sqlalchemy import select
+from app.models.symptom import SymptomModel
 from app.services.triage_service import TriageService
 
 logger = logging.getLogger(__name__)
