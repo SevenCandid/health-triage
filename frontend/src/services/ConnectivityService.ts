@@ -34,14 +34,11 @@ class ConnectivityService {
       const existing = await dbService.getKnowledgeBase()
       if (!existing) {
         try {
-          const res = await fetch('/data/knowledge.json')
-          if (res.ok) {
-            const data = await res.json()
-            await dbService.setKnowledgeBase(data)
-            console.log("Seeded knowledge base from local bundle.")
-          }
+          const fallbackData = await import('../../public/data/knowledge.json');
+          await dbService.setKnowledgeBase(fallbackData.default || fallbackData);
+          console.log("Seeded knowledge base from bundled JSON.");
         } catch (e) {
-          console.error('Failed to load local knowledge base fallback:', e)
+          console.error('Failed to load bundled knowledge base fallback:', e);
         }
       }
     }
