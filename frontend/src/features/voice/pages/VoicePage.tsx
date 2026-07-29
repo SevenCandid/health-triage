@@ -427,62 +427,62 @@ export default function VoicePage() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col items-center justify-center p-6 text-center relative">
+    <div className="mx-auto flex h-full max-h-full max-w-2xl flex-col items-center justify-between p-4 sm:p-6 text-center relative overflow-hidden">
       
       {showAssessmentNotice && (
-         <div className="absolute top-4 left-4 right-4 z-10">
+         <div className="w-full mt-2 sm:mt-4 z-10 flex-shrink-0">
              <AssessmentNotice />
          </div>
       )}
 
       {/* Dynamic System Message */}
-      <div className="mb-12 min-h-[4rem] mt-16">
+      <div className="mt-4 sm:mt-8 min-h-[3rem] sm:min-h-[4rem] flex items-center justify-center flex-shrink-0 px-2">
         {voiceState === 'SPEAKING' && (
-          <h2 className="text-2xl font-semibold text-foreground animate-pulse">
+          <h2 className="text-xl sm:text-2xl font-semibold text-foreground animate-pulse">
             {systemMessage}
           </h2>
         )}
         {voiceState === 'LISTENING' && (
-          <h2 className="text-2xl font-semibold text-primary">
+          <h2 className="text-xl sm:text-2xl font-semibold text-primary">
             I'm listening...
           </h2>
         )}
         {voiceState === 'PROCESSING' && (
-          <h2 className="text-2xl font-semibold text-muted-foreground">
+          <h2 className="text-xl sm:text-2xl font-semibold text-muted-foreground">
             Thinking...
           </h2>
         )}
       </div>
 
       {/* Main Visualizer */}
-      <div className="mb-12">
+      <div className="flex-1 flex items-center justify-center min-h-[160px]">
         <VoiceWave state={voiceState} />
       </div>
 
       {/* Transcript / Spoken Feedback */}
-      <div className="mb-12 min-h-[3rem] w-full max-w-md rounded-xl bg-accent/50 p-4">
+      <div className="mb-4 sm:mb-8 min-h-[2.5rem] sm:min-h-[3rem] w-full max-w-md rounded-xl bg-accent/50 p-3 sm:p-4 flex-shrink-0 flex items-center justify-center">
         {transcriptText ? (
-          <p className="text-lg text-foreground">"{transcriptText}"</p>
+          <p className="text-base sm:text-lg text-foreground line-clamp-2">"{transcriptText}"</p>
         ) : (
-          <p className="text-lg text-muted-foreground italic">
+          <p className="text-base sm:text-lg text-muted-foreground italic">
             {voiceState === 'LISTENING' ? 'Speak clearly into your microphone' : 'Waiting...'}
           </p>
         )}
       </div>
 
       {/* Controls */}
-      <div className="flex gap-4">
+      <div className="flex gap-3 sm:gap-4 flex-shrink-0 mb-4 sm:mb-8">
         {voiceState === 'IDLE' ? (
-          <Button size="lg" className="rounded-full px-8 py-6 text-lg" onClick={startListening}>
+          <Button size="lg" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={startListening}>
             Tap to Speak
           </Button>
         ) : voiceState === 'LISTENING' ? (
-           <Button size="lg" variant="outline" className="rounded-full px-8 py-6 text-lg" onClick={stopListening}>
+           <Button size="lg" variant="outline" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={stopListening}>
              Pause
            </Button>
         ) : null}
         
-        <Button size="lg" variant="danger" className="rounded-full px-8 py-6 text-lg" onClick={handleEndTriage}>
+        <Button size="lg" variant="danger" className="rounded-full px-6 py-4 sm:px-8 sm:py-6 text-base sm:text-lg" onClick={handleEndTriage}>
           End Triage
         </Button>
       </div>

@@ -9,9 +9,9 @@ interface LoadingSpinnerProps {
 }
 
 const sizeMap = {
-  sm: 'h-4 w-4 border-2',
-  md: 'h-8 w-8 border-2',
-  lg: 'h-12 w-12 border-4',
+  sm: 'w-8 h-4',
+  md: 'w-16 h-8',
+  lg: 'w-24 h-12',
 }
 
 export function LoadingSpinner({
@@ -22,20 +22,48 @@ export function LoadingSpinner({
 }: LoadingSpinnerProps) {
   const spinner = (
     <div className={cn('flex flex-col items-center justify-center gap-4', className)}>
-      <motion.div
-        animate={{ scale: [0.9, 1.1, 0.9], opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        className={cn(
-          'rounded-full bg-primary/20 flex items-center justify-center',
-          sizeMap[size].replace('border-2', '').replace('border-4', '')
-        )}
+      <div
+        className={cn('relative flex items-center justify-center', sizeMap[size])}
         role="status"
         aria-label={label}
       >
-        <div className="w-1/2 h-1/2 rounded-full bg-primary/80" />
-      </motion.div>
+        <svg
+          viewBox="0 0 100 50"
+          className="absolute inset-0 w-full h-full text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.8)]"
+          preserveAspectRatio="none"
+        >
+          {/* Faded background path */}
+          <path
+            d="M 0 25 L 25 25 L 35 10 L 45 40 L 55 5 L 65 40 L 75 25 L 100 25"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="opacity-20"
+          />
+          {/* Animated tracing path */}
+          <motion.path
+            d="M 0 25 L 25 25 L 35 10 L 45 40 L 55 5 L 65 40 L 75 25 L 100 25"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0, pathOffset: 1 }}
+            animate={{ pathLength: 1, pathOffset: 0 }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          />
+        </svg>
+      </div>
       {label && (
-        <p className="text-sm font-medium text-muted-foreground animate-pulse">{label}</p>
+        <p className="text-sm font-medium text-muted-foreground animate-pulse tracking-wide">
+          {label}
+        </p>
       )}
     </div>
   )

@@ -38,10 +38,10 @@ export function VoiceWave({ state }: VoiceWaveProps) {
   }
 
   return (
-    <div className="relative flex h-64 w-64 items-center justify-center">
+    <div className="relative flex h-40 w-40 sm:h-64 sm:w-64 items-center justify-center">
       {/* Outer Pulse Rings */}
       <motion.div
-        className={cn('absolute inset-0 rounded-full border-4', ringColors)}
+        className={cn('absolute inset-0 rounded-full border-[3px] sm:border-4', ringColors)}
         animate={
           isAnimating
             ? { scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }
@@ -54,7 +54,7 @@ export function VoiceWave({ state }: VoiceWaveProps) {
         }}
       />
       <motion.div
-        className={cn('absolute inset-4 rounded-full border-4', ringColors)}
+        className={cn('absolute inset-2 sm:inset-4 rounded-full border-[3px] sm:border-4', ringColors)}
         animate={
           isAnimating
             ? { scale: [1, 1.3, 1], opacity: [0.7, 0, 0.7] }
@@ -70,7 +70,7 @@ export function VoiceWave({ state }: VoiceWaveProps) {
 
       {/* Center Core */}
       <motion.div
-        className={cn('h-24 w-24 rounded-full shadow-xl shadow-current', centerColor)}
+        className={cn('h-16 w-16 sm:h-24 sm:w-24 rounded-full shadow-xl shadow-current', centerColor)}
         animate={
           isAnimating
             ? { scale: state === 'SPEAKING' ? [1, 1.1, 1] : 1 }
