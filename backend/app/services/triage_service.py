@@ -120,6 +120,7 @@ class TriageService:
             conversation_id=conversation_id,
             symptom_id=sym.id
         )
+        conv.symptoms.append(conv_symp)
         self.session.add(conv_symp)
         await self.session.flush()
 
