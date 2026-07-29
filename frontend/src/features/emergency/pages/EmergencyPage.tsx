@@ -13,7 +13,17 @@ import { GuestBlock } from '@/components/common/GuestBlock'
 
 const DEFAULT_EMERGENCY_NUMBER = '112'
 
-type AddContactMode = 'HEALTHCARE_PROVIDER' | 'FAMILY' | null
+type AddContactMode = 'HEALTHCARE_PROVIDER' | 'CONTACT' | null
+
+const RELATIONSHIP_OPTIONS = [
+  { value: 'SPOUSE', label: 'Spouse / Partner' },
+  { value: 'PARENT', label: 'Parent' },
+  { value: 'CHILD', label: 'Child' },
+  { value: 'SIBLING', label: 'Sibling' },
+  { value: 'FRIEND', label: 'Friend' },
+  { value: 'COLLEAGUE', label: 'Colleague' },
+  { value: 'OTHER', label: 'Other' },
+]
 
 export default function EmergencyPage() {
   const navigate = useNavigate()
@@ -22,7 +32,7 @@ export default function EmergencyPage() {
   const [confirmingEmergency, setConfirmingEmergency] = useState(false)
   const [confirmingContact, setConfirmingContact] = useState<{ name: string; phone: string } | null>(null)
   const [addMode, setAddMode] = useState<AddContactMode>(null)
-  const [form, setForm] = useState({ name: '', phone: '' })
+  const [form, setForm] = useState({ name: '', phone: '', relationship: 'OTHER' })
   const { userRole } = useAuthStore()
 
   const { data: contactsData, isLoading } = useQuery({
@@ -36,13 +46,13 @@ export default function EmergencyPage() {
       profileApi.addEmergencyContact({
         contact_name: form.name.trim(),
         phone_number: form.phone.trim(),
-        relationship_type: addMode!,
-        is_primary: addMode === 'FAMILY',
+        relationship_type: addMode === 'HEALTHCARE_PROVIDER' ? 'HEALTHCARE_PROVIDER' : form.relationship,
+        is_primary: addMode === 'CONTACT',
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emergencyContacts'] })
       setAddMode(null)
-      setForm({ name: '', phone: '' })
+      setForm({ name: '', phone: '', relationship: 'OTHER' })
     },
   })
 
@@ -160,7 +170,7 @@ export default function EmergencyPage() {
             </button>
           ) : (
             <button
-              onClick={() => setAddMode('FAMILY')}
+              onClick={() => setAddMode('CONTACT')}
               className="w-full border border-dashed border-border text-muted-foreground text-xs rounded-lg py-2 hover:bg-accent transition-all"
             >
               + Add Contact
@@ -233,6 +243,20 @@ export default function EmergencyPage() {
                       className="h-10 text-sm"
                     />
                   </div>
+                  {addMode === 'CONTACT' && (
+                    <div>
+                      <label className="text-xs font-medium text-foreground block mb-1">Relationship</label>
+                      <select
+                        value={form.relationship}
+                        onChange={e => setForm(f => ({ ...f, relationship: e.target.value }))}
+                        className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        {RELATIONSHIP_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-2 pt-1">
                   <Button
@@ -242,7 +266,7 @@ export default function EmergencyPage() {
                   >
                     {addContactMutation.isPending ? 'Saving…' : 'Save Contact'}
                   </Button>
-                  <Button variant="outline" className="w-full" onClick={() => { setAddMode(null); setForm({ name: '', phone: '' }) }}>
+                  <Button variant="outline" className="w-full" onClick={() => { setAddMode(null); setForm({ name: '', phone: '', relationship: 'OTHER' }) }}>
                     Cancel
                   </Button>
                 </div>
