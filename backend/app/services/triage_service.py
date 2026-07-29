@@ -181,7 +181,9 @@ class TriageService:
     async def get_progress(self, conversation_id: str) -> tuple[HealthConversationModel, int]:
         """Retrieves session progress and count of recorded answers."""
         conv_res = await self.session.execute(
-            select(HealthConversationModel).where(
+            select(HealthConversationModel)
+            .options(selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom))
+            .where(
                 HealthConversationModel.id == conversation_id,
                 HealthConversationModel.is_deleted == False,
             )
@@ -197,7 +199,7 @@ class TriageService:
         """Loads and calculates the current or final result of a conversation."""
         conv_res = await self.session.execute(
             select(HealthConversationModel)
-            .options(selectinload(HealthConversationModel.symptoms))
+            .options(selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom))
             .where(
                 HealthConversationModel.id == conversation_id,
                 HealthConversationModel.is_deleted == False,
