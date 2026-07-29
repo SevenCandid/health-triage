@@ -308,8 +308,10 @@ class SqlAlchemyTriageSessionRepository(ITriageSessionRepository):
                     symptom_details=session_data.get("symptom_details", {}),
                     language_code=session_data.get("language_code", "en"),
                     created_offline=True,
-                    conducted_at=datetime.fromisoformat(
-                        session_data.get("conducted_at", datetime.now(timezone.utc).isoformat())
+                    conducted_at=(
+                        session_data["conducted_at"] 
+                        if isinstance(session_data.get("conducted_at"), datetime)
+                        else datetime.fromisoformat(session_data.get("conducted_at", datetime.now(timezone.utc).isoformat()))
                     ),
                     synced_at=datetime.now(timezone.utc),
                 )
