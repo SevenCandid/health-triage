@@ -1,4 +1,4 @@
-import { openDB, DBSchema, IDBPDatabase } from 'idb'
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 export interface KnowledgeBaseData {
   rule_set_version: string
@@ -24,9 +24,9 @@ interface HealthTriageDB extends DBSchema {
       symptom_details: any
       language_code: string
       conducted_at: string
-      synced: boolean
+      synced: number // 0 for false, 1 for true
     }
-    indexes: { 'by-sync': boolean }
+    indexes: { 'by-sync': number }
   }
   auth_session: {
     key: string
@@ -80,7 +80,7 @@ class DatabaseService {
 
   async getUnsyncedConversations() {
     const db = await this.dbPromise
-    return db.getAllFromIndex('conversations', 'by-sync', false)
+    return db.getAllFromIndex('conversations', 'by-sync', 0)
   }
 
   async markConversationSynced(local_id: string, server_id: string) {
@@ -89,7 +89,7 @@ class DatabaseService {
     const store = tx.objectStore('conversations')
     const conv = await store.get(local_id)
     if (conv) {
-      conv.synced = true
+      conv.synced = 1
       conv.id = server_id
       await store.put(conv)
     }

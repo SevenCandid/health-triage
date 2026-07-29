@@ -1,6 +1,5 @@
-import { v4 as uuidv4 } from 'uuid'
-import { dbService, KnowledgeBaseData } from '../../../../services/DatabaseService'
-import { ClientRuleEngine, TriageRule, UrgencyCode } from './ClientRuleEngine'
+import { dbService, type KnowledgeBaseData } from '../../../services/DatabaseService'
+import { ClientRuleEngine, type TriageRule, type UrgencyCode } from './ClientRuleEngine'
 
 export class ClientTriageService {
   /**
@@ -11,7 +10,7 @@ export class ClientTriageService {
     languageCode: string = 'en',
     userId?: string
   ) {
-    const localId = uuidv4()
+    const localId = crypto.randomUUID()
     
     // Create conversation record in IndexedDB
     const conversation = {
@@ -22,7 +21,7 @@ export class ClientTriageService {
       symptom_details: {},
       language_code: languageCode,
       conducted_at: new Date().toISOString(),
-      synced: false,
+      synced: 0,
     }
     
     await dbService.saveConversation(conversation)
@@ -84,7 +83,7 @@ export class ClientTriageService {
     const emergencyRules = symptomRules.filter((r: any) => r.is_red_flag_override)
     const emergencyEngine = new ClientRuleEngine(emergencyRules as TriageRule[])
     
-    const { severity: redFlagSeverity, ruleId: redFlagRuleId } = emergencyEngine.calculateScore(answers)
+    const { ruleId: redFlagRuleId } = emergencyEngine.calculateScore(answers)
     if (redFlagRuleId) {
       // Short-circuit to RED
       conversation.urgency_level = 'RED'
@@ -115,7 +114,7 @@ export class ClientTriageService {
     }
 
     // 4. Scoring Engine
-    const { severity: finalSeverity, ruleId } = ruleEngine.calculateScore(answers)
+    const { severity: finalSeverity } = ruleEngine.calculateScore(answers)
     conversation.urgency_level = finalSeverity
     await dbService.saveConversation(conversation)
     
@@ -125,7 +124,7 @@ export class ClientTriageService {
     return this.buildResult(finalSeverity, recommendations, 'Offline triage evaluation completed.')
   }
 
-  private static getRecommendations(severity: UrgencyCode, kb: KnowledgeBaseData) {
+  private static getRecommendations(_severity: UrgencyCode, kb: KnowledgeBaseData) {
     // In backend, recommendations are fetched by severity_level_id. 
     // Here we can find the severity_level_id using the UrgencyCode if needed, 
     // or just match recommendations based on the rule. 

@@ -74,7 +74,7 @@ export const profileApi = {
 
 // ── Assessment API ────────────────────────────────────────────────────────────
 
-import { useNetworkStore } from '../stores/useNetworkStore'
+import { useNetworkStore } from '../stores/network-store'
 import { ClientTriageService } from '../features/assessment/services/ClientTriageService'
 import { dbService } from './DatabaseService'
 

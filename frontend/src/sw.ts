@@ -1,9 +1,7 @@
 /// <reference lib="webworker" />
 import { clientsClaim } from 'workbox-core'
 import { precacheAndRoute } from 'workbox-precaching'
-import { BackgroundSyncPlugin } from 'workbox-background-sync'
-import { registerRoute } from 'workbox-routing'
-import { NetworkOnly } from 'workbox-strategies'
+
 
 // Explicitly declare the self variable for the service worker context
 declare const self: ServiceWorkerGlobalScope
