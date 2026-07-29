@@ -28,7 +28,7 @@ from app.models.mixins import SoftDeleteMixin, TimestampMixin, UUIDPrimaryKeyMix
 if TYPE_CHECKING:
     from app.models.language import LanguageModel
     from app.models.emergency_contact import EmergencyContactModel
-    from app.models.assessment_session import AssessmentSessionModel
+    from app.models.health_conversation import HealthConversationModel
     from app.models.audit_log import AuditLogModel
 
 
@@ -167,11 +167,11 @@ class UserModel(UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
         cascade="all, delete-orphan",
         order_by="EmergencyContactModel.is_primary.desc()",
     )
-    assessment_sessions: Mapped[List["AssessmentSessionModel"]] = relationship(
-        "AssessmentSessionModel",
+    conversations: Mapped[List["HealthConversationModel"]] = relationship(
+        "HealthConversationModel",
         back_populates="user",
         cascade="all, delete-orphan",
-        order_by="AssessmentSessionModel.created_at.desc()",
+        order_by="HealthConversationModel.created_at.desc()",
     )
     audit_logs: Mapped[List["AuditLogModel"]] = relationship(
         "AuditLogModel",

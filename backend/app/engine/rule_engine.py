@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
-from app.models.assessment_session import AssessmentSessionModel
+from app.models.health_conversation import HealthConversationModel, ConversationSymptomModel
 from app.models.question import QuestionModel
 from app.models.triage_rule import TriageRuleModel
 from app.models.recommendation import RecommendationModel
@@ -61,114 +61,143 @@ class RuleEngine:
         self.recommendation_engine = RecommendationEngine()
         self.decision_engine = DecisionEngine()
 
-    def evaluate(
+    def evaluate_conversation(
         self,
-        session: AssessmentSessionModel,
-        questions: List[QuestionModel],
-        rules: List[TriageRuleModel],
-        recommendations: List[RecommendationModel],
+        conversation: HealthConversationModel,
+        active_symptom: Optional[ConversationSymptomModel],
+        all_questions: Dict[str, List[QuestionModel]],
+        all_rules: Dict[str, List[TriageRuleModel]],
+        all_recommendations: List[RecommendationModel],
     ) -> TriageEvaluationResult:
-        """Evaluates the current state of an assessment session.
+        """Evaluates the current state of a health conversation across all symptoms.
 
         Checks for red flags, determines if more questions are needed,
         calculates clinical score, and loads recommendations.
 
         Args:
-            session: The active AssessmentSession with raw_answers_snapshot loaded.
-            questions: All QuestionModel records for this symptom (options eagerly loaded).
-            rules: All TriageRuleModel records for this symptom (severity_level eagerly loaded).
-            recommendations: Pre-filtered RecommendationModel records relevant to this symptom.
+            conversation: The active HealthConversation with raw_answers_snapshot loaded.
+            active_symptom: The current symptom being actively evaluated/questioned.
+            all_questions: Map of symptom_id -> QuestionModel records.
+            all_rules: Map of symptom_id -> TriageRuleModel records.
+            all_recommendations: Pre-filtered RecommendationModel records.
 
         Returns:
-            A fully populated TriageEvaluationResult.
+            A fully populated TriageEvaluationResult aggregated across all symptoms.
         """
-        logger.info(f"Evaluating triage session: {session.id}")
-        answers: Dict[str, Any] = session.raw_answers_snapshot or {}
+        logger.info(f"Evaluating health conversation: {conversation.id}")
+        answers: Dict[str, Any] = conversation.raw_answers_snapshot or {}
 
-        # -------------------------------------------------------------------
-        # 1. Evaluate Emergency Override Rules (short-circuit on red flag)
-        # -------------------------------------------------------------------
-        emergency_match = self.emergency_engine.evaluate_red_flags(rules, answers)
-        if emergency_match:
-            logger.warning(f"Red flag trigger match: {emergency_match.rule_name!r}")
+        # We will aggregate these across all symptoms
+        highest_severity_level = 0
+        final_severity = UrgencyCode.GREEN
+        is_emergency = False
+        all_recs = []
+        explanations = []
+
+        # Map severities to numeric values to find the maximum
+        severity_ranks = {
+            UrgencyCode.GREEN: 1,
+            UrgencyCode.YELLOW: 2,
+            UrgencyCode.ORANGE: 3,
+            UrgencyCode.RED: 4,
+        }
+
+        # First, see if the active symptom needs more questions.
+        # We only ask questions for the active symptom.
+        if active_symptom:
+            sym_id = active_symptom.symptom_id
+            questions = all_questions.get(sym_id, [])
+            
+            next_q = self.question_engine.determine_next_question(questions, answers)
+            if next_q:
+                logger.info(f"Conversation incomplete. Next question node: {next_q.node_id!r}")
+                return TriageEvaluationResult(
+                    severity=UrgencyCode.GREEN,
+                    recommendations=["Please answer the follow-up questions to complete triage."],
+                    explanation="Triage in progress. More information required.",
+                    is_emergency=False,
+                    action_protocol=None,
+                    next_question={
+                        "id": next_q.id,
+                        "node_id": next_q.node_id,
+                        "question_text_en": next_q.question_text_en,
+                        "question_text_tw": next_q.question_text_tw,
+                        "question_type": next_q.question_type.value,
+                        "options": [
+                            {
+                                "id": opt.id,
+                                "option_value": opt.option_value,
+                                "label_en": opt.label_en,
+                                "label_tw": opt.label_tw,
+                            }
+                            for opt in next_q.options
+                        ],
+                    },
+                )
+
+        # If there are no next questions, or no active symptom, we evaluate EVERYTHING.
+        concern_ids = set()
+
+        for conv_symp in conversation.symptoms:
+            sym_id = conv_symp.symptom_id
+            rules = all_rules.get(sym_id, [])
+
+            # 1. Emergency Rules
+            emergency_match = self.emergency_engine.evaluate_red_flags(rules, answers)
+            if emergency_match:
+                logger.warning(f"Red flag trigger match: {emergency_match.rule_name!r}")
+                is_emergency = True
+                final_severity = UrgencyCode.RED
+                highest_severity_level = 4
+                if emergency_match.health_concern_id:
+                    concern_ids.add(emergency_match.health_concern_id)
+                explanations.append(f"[{conv_symp.symptom.name_en}] Emergency: {emergency_match.rule_name}")
+                continue
+
+            # 2. Regular Scoring
+            severity, matched_rule = self.scoring_engine.calculate_score(rules, answers)
+            if matched_rule and matched_rule.health_concern_id:
+                concern_ids.add(matched_rule.health_concern_id)
+            
+            if matched_rule and matched_rule.notes:
+                explanations.append(f"[{conv_symp.symptom.name_en}] {matched_rule.notes}")
+
+            # Update highest severity
+            rank = severity_ranks.get(severity, 1)
+            if rank > highest_severity_level:
+                highest_severity_level = rank
+                final_severity = severity
+
+        if not explanations:
+            explanations.append("Symptom evaluation completed.")
+
+        # 3. Recommendations
+        for concern_id in concern_ids:
             recs = self.recommendation_engine.get_recommendations_for_concern(
-                recommendations, emergency_match.health_concern_id
+                all_recommendations, concern_id
             )
-            protocol = self.decision_engine.get_action_protocol(UrgencyCode.RED)
-            return TriageEvaluationResult(
-                severity=UrgencyCode.RED,
-                recommendations=recs or [
-                    "Call emergency services immediately or go to the nearest emergency department."
-                ],
-                explanation=(
-                    f"Emergency Triggered: {emergency_match.rule_name}. "
-                    f"{emergency_match.notes or ''}"
-                ).strip(),
-                is_emergency=True,
-                action_protocol=ActionProtocolDTO(**protocol),
-                next_question=None,
-            )
+            all_recs.extend(recs)
+        
+        # Deduplicate recommendations
+        unique_recs = []
+        for r in all_recs:
+            if r not in unique_recs:
+                unique_recs.append(r)
 
-        # -------------------------------------------------------------------
-        # 2. Check for next unanswered question
-        # -------------------------------------------------------------------
-        next_q = self.question_engine.determine_next_question(questions, answers)
-        if next_q:
-            logger.info(f"Assessment incomplete. Next question node: {next_q.node_id!r}")
-            return TriageEvaluationResult(
-                severity=UrgencyCode.GREEN,
-                recommendations=["Please answer the follow-up questions to complete triage."],
-                explanation="Triage in progress. More information required.",
-                is_emergency=False,
-                action_protocol=None,
-                next_question={
-                    "id": next_q.id,
-                    "node_id": next_q.node_id,
-                    "question_text_en": next_q.question_text_en,
-                    "question_text_tw": next_q.question_text_tw,
-                    "question_type": next_q.question_type.value,
-                    "options": [
-                        {
-                            "id": opt.id,
-                            "option_value": opt.option_value,
-                            "label_en": opt.label_en,
-                            "label_tw": opt.label_tw,
-                        }
-                        for opt in next_q.options
-                    ],
-                },
-            )
+        if not unique_recs:
+            if is_emergency:
+                unique_recs = ["Call emergency services immediately or go to the nearest emergency department."]
+            else:
+                unique_recs = ["Monitor your symptoms. Seek medical advice if they worsen or persist."]
 
-        # -------------------------------------------------------------------
-        # 3. Calculate regular triage score
-        # -------------------------------------------------------------------
-        severity, matched_rule = self.scoring_engine.calculate_score(rules, answers)
-        concern_id = matched_rule.health_concern_id if matched_rule else None
-        explanation = (
-            matched_rule.notes
-            if (matched_rule and matched_rule.notes)
-            else "Symptom evaluation completed."
-        )
-
-        # -------------------------------------------------------------------
-        # 4. Retrieve recommendations for the matched health concern
-        # -------------------------------------------------------------------
-        recs = self.recommendation_engine.get_recommendations_for_concern(
-            recommendations, concern_id
-        )
-        if not recs:
-            recs = ["Monitor your symptoms. Seek medical advice if they worsen or persist."]
-
-        # -------------------------------------------------------------------
-        # 5. Map severity to clinical action protocol
-        # -------------------------------------------------------------------
-        protocol = self.decision_engine.get_action_protocol(severity)
+        # 4. Action Protocol
+        protocol = self.decision_engine.get_action_protocol(final_severity)
 
         return TriageEvaluationResult(
-            severity=severity,
-            recommendations=recs,
-            explanation=explanation,
-            is_emergency=(severity == UrgencyCode.RED),
+            severity=final_severity,
+            recommendations=unique_recs,
+            explanation=" | ".join(explanations),
+            is_emergency=is_emergency,
             action_protocol=ActionProtocolDTO(**protocol),
             next_question=None,
         )

@@ -23,7 +23,7 @@ from app.models.recommendation import RecommendationModel  # noqa: F401
 from app.models.recommendation_translation import RecommendationTranslationModel  # noqa: F401
 from app.models.question import QuestionModel  # noqa: F401
 from app.models.question_option import QuestionOptionModel  # noqa: F401
-from app.models.assessment_session import AssessmentSessionModel  # noqa: F401
+from app.models.health_conversation import HealthConversationModel, ConversationSymptomModel  # noqa: F401
 from app.models.assessment_response import AssessmentResponseModel  # noqa: F401
 from app.models.audit_log import AuditLogModel  # noqa: F401
 
@@ -46,7 +46,8 @@ __all__ = [
     "RecommendationTranslationModel",
     "QuestionModel",
     "QuestionOptionModel",
-    "AssessmentSessionModel",
+    "HealthConversationModel",
+    "ConversationSymptomModel",
     "AssessmentResponseModel",
     "AuditLogModel",
 ]

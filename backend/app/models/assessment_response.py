@@ -17,9 +17,10 @@ from app.models.base import Base
 from app.models.mixins import UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
-    from app.models.assessment_session import AssessmentSessionModel
+    from app.models.health_conversation import HealthConversationModel
     from app.models.question import QuestionModel
     from app.models.question_option import QuestionOptionModel
+    from app.models.symptom import SymptomModel
 
 
 class AssessmentResponseModel(UUIDPrimaryKeyMixin, Base):
@@ -34,16 +35,27 @@ class AssessmentResponseModel(UUIDPrimaryKeyMixin, Base):
     }
 
     # ---- Foreign Keys ---------------------------------------------------
-    session_id: Mapped[str] = mapped_column(
+    conversation_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey(
-            "assessment_sessions.id",
+            "health_conversations.id",
             ondelete="CASCADE",
-            name="fk_assessment_responses_session_id",
+            name="fk_assessment_responses_conversation_id",
         ),
         nullable=False,
         index=True,
-        comment="Parent assessment session UUID.",
+        comment="Parent health conversation UUID.",
+    )
+    symptom_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey(
+            "symptoms.id",
+            ondelete="SET NULL",
+            name="fk_assessment_responses_symptom_id",
+        ),
+        nullable=True,
+        index=True,
+        comment="Symptom this response pertains to.",
     )
     question_id: Mapped[Optional[str]] = mapped_column(
         String(36),
@@ -100,9 +112,13 @@ class AssessmentResponseModel(UUIDPrimaryKeyMixin, Base):
     )
 
     # ---- Relationships --------------------------------------------------
-    session: Mapped["AssessmentSessionModel"] = relationship(
-        "AssessmentSessionModel",
+    conversation: Mapped["HealthConversationModel"] = relationship(
+        "HealthConversationModel",
         back_populates="responses",
+    )
+    symptom: Mapped[Optional["SymptomModel"]] = relationship(
+        "SymptomModel",
+        foreign_keys=[symptom_id],
     )
     question: Mapped[Optional["QuestionModel"]] = relationship(
         "QuestionModel",

@@ -65,7 +65,7 @@ async def start_assessment(
     user_id: Optional[str] = Depends(get_optional_user_id),
 ) -> AssessmentStartResponse:
     """Creates a new assessment session record."""
-    sess, pending_symptom, pending_symptom_slug, pending_session_id = await service.start_session(
+    sess, pending_symptom, pending_symptom_slug, pending_session_id = await service.start_conversation(
         language_code=payload.language_code,
         consultation_mode=payload.consultation_mode,
         created_offline=payload.created_offline,
@@ -100,8 +100,8 @@ async def set_symptoms(
         normalizer = SymptomNormalizer()
         input_text = payload.user_text or payload.symptom_slug
         normalized_slug = normalizer.normalize(input_text) or payload.symptom_slug
-        sess, sym, eval_result = await service.set_symptoms(
-            session_id=payload.session_id,
+        sess, sym, eval_result = await service.add_symptom(
+            conversation_id=payload.session_id,
             symptom_slug=normalized_slug,
         )
     except ValueError as exc:
@@ -143,7 +143,7 @@ async def submit_answer(
     """Submits a single question node answer and advances assessment progress."""
     try:
         sess, eval_result = await service.record_answer(
-            session_id=payload.session_id,
+            conversation_id=payload.session_id,
             node_id=payload.node_id,
             answer_value=payload.answer_value,
             answer_raw_text=payload.answer_raw_text,
@@ -304,7 +304,7 @@ async def restart_assessment(
 ) -> AssessmentRestartResponse:
     """Restarts an assessment flow."""
     try:
-        new_sess = await service.restart_session(payload.session_id)
+        new_sess = await service.restart_conversation(payload.session_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
 
@@ -325,7 +325,7 @@ async def resolve_assessment(
 ):
     """Marks a session as resolved/archived."""
     try:
-        await service.resolve_session(session_id)
+        await service.resolve_conversation(session_id)
         return {"status": "success"}
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))

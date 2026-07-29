@@ -409,7 +409,7 @@ export default function VoicePage() {
     // Check for confirmations to "I think I have enough information..."
     if (isConfirmingCompletion) {
         setIsConfirmingCompletion(false)
-        const noIntents = ['no', 'nope', 'nothing', 'thats all', 'no more', 'none', 'nah', "no i dont", "no i am not", "i dont think so", "nothing else"]
+        const noIntents = ['no', 'nope', 'nothing', 'thats all', 'no more', 'none', 'nah', "no i dont", "no i am not", "i dont think so", "nothing else", "its okay", "thats enough", "im good"]
         const pureYesIntents = ['yes', 'yeah', 'yep', 'yup', 'i do', 'sure', 'yes i do']
         
         const cleanResponse = lowerText.replace(/[']/g, '')
@@ -420,6 +420,7 @@ export default function VoicePage() {
         }
         
         if (pureYesIntents.some(yes => cleanResponse === yes)) {
+            setCurrentQuestion(null)
             speakText("Okay, please tell me what else you're experiencing.", () => startListening())
             return
         }
@@ -429,12 +430,13 @@ export default function VoicePage() {
         setCurrentQuestion(null)
     }
 
-    if (!useAssessmentStore.getState().currentQuestion) {
+    const currentQ = useAssessmentStore.getState().currentQuestion
+    if (!currentQ) {
       // Initial symptom phase
       symptomsMutation.mutate({ sid, symptoms: [text] })
     } else {
       // Answering a follow-up question
-      const nodeId = question.node_id
+      const nodeId = currentQ.node_id
       answerMutation.mutate({ sid, answerText: text, nodeId })
     }
   }
@@ -447,7 +449,8 @@ export default function VoicePage() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-h-full max-w-2xl flex-col items-center justify-between p-4 sm:p-6 text-center relative overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-background overflow-hidden" style={{ top: '3.5rem', bottom: '0' }}>
+      <div className="mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-between px-3 py-4 sm:p-6 text-center">
       
       {showAssessmentNotice && (
          <div className="w-full mt-2 sm:mt-4 z-10 flex-shrink-0">
@@ -456,19 +459,19 @@ export default function VoicePage() {
       )}
 
       {/* Dynamic System Message */}
-      <div className="mt-4 sm:mt-8 min-h-[3rem] sm:min-h-[4rem] flex items-center justify-center flex-shrink-0 px-2">
+      <div className="mt-2 sm:mt-6 min-h-[4rem] sm:min-h-[5rem] flex items-center justify-center flex-shrink-0 px-2 w-full">
         {voiceState === 'SPEAKING' && (
-          <h2 className="text-xl sm:text-2xl font-semibold text-foreground animate-pulse">
+          <h2 className="text-lg sm:text-2xl font-semibold text-foreground animate-pulse">
             {systemMessage}
           </h2>
         )}
         {voiceState === 'LISTENING' && (
-          <h2 className="text-xl sm:text-2xl font-semibold text-primary">
+          <h2 className="text-lg sm:text-2xl font-semibold text-primary">
             I'm listening...
           </h2>
         )}
         {voiceState === 'PROCESSING' && (
-          <h2 className="text-xl sm:text-2xl font-semibold text-muted-foreground">
+          <h2 className="text-lg sm:text-2xl font-semibold text-muted-foreground">
             Thinking...
           </h2>
         )}
@@ -491,22 +494,23 @@ export default function VoicePage() {
       </div>
 
       {/* Controls */}
-      <div className="flex gap-3 sm:gap-4 flex-shrink-0 mb-4 sm:mb-8 w-full justify-center px-4">
+      <div className="flex gap-2 sm:gap-4 flex-shrink-0 mt-auto w-full justify-center pb-2">
         {voiceState === 'IDLE' ? (
-          <Button className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={startListening}>
+          <Button className="rounded-full h-9 sm:h-12 px-4 sm:px-6 text-xs sm:text-base whitespace-nowrap shadow-sm" onClick={startListening}>
             Tap to Speak
           </Button>
         ) : voiceState === 'LISTENING' ? (
-           <Button variant="outline" className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={stopListening}>
+           <Button variant="outline" className="rounded-full h-9 sm:h-12 px-4 sm:px-6 text-xs sm:text-base whitespace-nowrap shadow-sm border-primary/50 text-primary" onClick={stopListening}>
              Pause
            </Button>
         ) : null}
         
-        <Button variant="danger" className="rounded-full h-10 sm:h-14 px-4 sm:px-8 text-sm sm:text-lg whitespace-nowrap" onClick={handleEndTriage}>
+        <Button variant="danger" className="rounded-full h-9 sm:h-12 px-4 sm:px-6 text-xs sm:text-base whitespace-nowrap shadow-sm" onClick={handleEndTriage}>
           End Triage
         </Button>
       </div>
       
+      </div>
     </div>
   )
 }

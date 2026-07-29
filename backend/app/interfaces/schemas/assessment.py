@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
-from app.models.assessment_session import SessionStatus, ConsultationMode
+from app.models.health_conversation import ConversationStatus as SessionStatus, ConsultationMode
 from app.models.severity_level import UrgencyCode
 
 

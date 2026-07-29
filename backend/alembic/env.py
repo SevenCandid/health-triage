@@ -29,7 +29,7 @@ from app.models.base import Base  # noqa: E402
 import app.infrastructure.database.models  # noqa: E402, F401 — registers legacy models
 import app.models.user
 import app.models.emergency_contact
-import app.models.assessment_session
+import app.models.health_conversation
 import app.models.audit_log
 import app.models.health_concern
 import app.models.language

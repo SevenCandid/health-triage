@@ -121,27 +121,12 @@ export default function AssessmentPage() {
       setTimeout(() => {
         setIsTypingSimulated(false)
         if (!res.data.next_question) {
-          if (hasChosenToContinue) {
-            // User already chose to continue once — auto-generate now
-            setTranscript(prev => [...prev, {
-              id: crypto.randomUUID(),
-              role: 'SYSTEM',
-              content: getRandomPrompt('transitions')
-            }])
-            setIsTypingSimulated(true)
-            setTimeout(() => {
-              setIsTypingSimulated(false)
-              completeSession()
-              navigate(`/assessment/${sessionId}/result`)
-            }, 1500)
-          } else {
-            setSufficientInfoConfirmation(true)
-            setTranscript(prev => [...prev, {
-              id: crypto.randomUUID(),
-              role: 'SYSTEM',
-              content: getRandomPrompt('sufficientInfo')
-            }])
-          }
+          setSufficientInfoConfirmation(true)
+          setTranscript(prev => [...prev, {
+            id: crypto.randomUUID(),
+            role: 'SYSTEM',
+            content: getRandomPrompt('sufficientInfo')
+          }])
         } else {
           setCurrentQuestion(res.data.next_question)
           setTranscript(prev => [...prev, {

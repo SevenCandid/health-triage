@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.assessment_session import AssessmentSessionModel, SessionStatus, ConsultationMode
+from app.models.health_conversation import HealthConversationModel, ConversationSymptomModel, ConversationStatus, ConsultationMode
 from app.models.assessment_response import AssessmentResponseModel
 from app.models.symptom import SymptomModel
 from app.models.question import QuestionModel
@@ -35,73 +35,71 @@ class TriageService:
         self.session = db_session
         self.engine = RuleEngine()
 
-    async def start_session(
+    async def start_conversation(
         self,
         language_code: str = "en",
         consultation_mode: ConsultationMode = ConsultationMode.TEXT,
         created_offline: bool = False,
         user_id: Optional[str] = None
-    ) -> tuple[AssessmentSessionModel, Optional[str]]:
-        """Creates and persists a new assessment session."""
-        logger.info(f"Starting new assessment session. Mode: {consultation_mode}, Lang: {language_code}")
+    ) -> tuple[HealthConversationModel, Optional[str]]:
+        """Creates and persists a new health conversation."""
+        logger.info(f"Starting new health conversation. Mode: {consultation_mode}, Lang: {language_code}")
         
         pending_symptom = None
         pending_symptom_slug = None
         if user_id:
             seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
             recent_sess_res = await self.session.execute(
-                select(AssessmentSessionModel)
+                select(HealthConversationModel)
+                .options(selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom))
                 .where(
-                    AssessmentSessionModel.user_id == user_id,
-                    AssessmentSessionModel.conducted_at >= seven_days_ago,
-                    AssessmentSessionModel.symptom_id.isnot(None),
-                    AssessmentSessionModel.is_deleted == False
+                    HealthConversationModel.user_id == user_id,
+                    HealthConversationModel.conducted_at >= seven_days_ago,
+                    HealthConversationModel.is_deleted == False
                 )
-                .order_by(AssessmentSessionModel.conducted_at.desc())
+                .order_by(HealthConversationModel.conducted_at.desc())
                 .limit(1)
             )
             recent_sess = recent_sess_res.scalar_one_or_none()
-            if recent_sess and recent_sess.symptom_id:
-                sym_res = await self.session.execute(
-                    select(SymptomModel).where(SymptomModel.id == recent_sess.symptom_id)
-                )
-                sym = sym_res.scalar_one_or_none()
-                if sym:
-                    pending_symptom = sym.name_en
-                    pending_symptom_slug = sym.slug
-                    pending_session_id = recent_sess.id
+            if recent_sess and recent_sess.symptoms:
+                sym = recent_sess.symptoms[0].symptom
+                pending_symptom = sym.name_en
+                pending_symptom_slug = sym.slug
+                pending_session_id = recent_sess.id
 
-        sess = AssessmentSessionModel(
+        conv = HealthConversationModel(
             id=str(uuid.uuid4()),
             user_id=user_id,
-            status=SessionStatus.ACTIVE,
+            status=ConversationStatus.ACTIVE,
             consultation_mode=consultation_mode,
             language_code=language_code,
             created_offline=created_offline,
             conducted_at=datetime.now(timezone.utc),
             raw_answers_snapshot={}
         )
-        self.session.add(sess)
+        self.session.add(conv)
         await self.session.flush()
-        await self.session.refresh(sess)
-        return sess, pending_symptom, pending_symptom_slug, pending_session_id
+        await self.session.refresh(conv)
+        return conv, pending_symptom, pending_symptom_slug, pending_session_id if pending_symptom else None
 
-    async def set_symptoms(
+    async def add_symptom(
         self,
-        session_id: str,
+        conversation_id: str,
         symptom_slug: str
-    ) -> tuple[AssessmentSessionModel, SymptomModel, TriageEvaluationResult]:
-        """Sets the primary symptom for an active assessment session and runs initial evaluation."""
-        logger.info(f"Setting symptom '{symptom_slug}' for session {session_id}")        
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
+    ) -> tuple[HealthConversationModel, SymptomModel, TriageEvaluationResult]:
+        """Adds a new symptom to an active health conversation and runs initial evaluation."""
+        logger.info(f"Adding symptom '{symptom_slug}' to conversation {conversation_id}")        
+        conv_res = await self.session.execute(
+            select(HealthConversationModel)
+            .options(selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom))
+            .where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
         sym_res = await self.session.execute(
             select(SymptomModel).where(SymptomModel.slug == symptom_slug)
@@ -110,50 +108,64 @@ class TriageService:
         if not sym:
             raise ValueError(f"Symptom '{symptom_slug}' not found.")
 
-        sess.symptom_id = sym.id
+        # Check if symptom is already in conversation
+        for cs in conv.symptoms:
+            if cs.symptom_id == sym.id:
+                eval_result = await self.evaluate_conversation(conversation_id, sym.id)
+                return conv, sym, eval_result
+
+        # Create new ConversationSymptom
+        conv_symp = ConversationSymptomModel(
+            id=str(uuid.uuid4()),
+            conversation_id=conversation_id,
+            symptom_id=sym.id
+        )
+        self.session.add(conv_symp)
         await self.session.flush()
 
-        eval_result = await self.evaluate_assessment_session(session_id)
-        return sess, sym, eval_result
+        eval_result = await self.evaluate_conversation(conversation_id, sym.id)
+        return conv, sym, eval_result
 
     async def record_answer(
         self,
-        session_id: str,
+        conversation_id: str,
         node_id: str,
         answer_value: str,
         answer_raw_text: Optional[str] = None
-    ) -> tuple[AssessmentSessionModel, TriageEvaluationResult]:
-        """Records a user answer to a question node and re-evaluates the session."""
-        logger.info(f"Recording answer node '{node_id}'='{answer_value}' for session {session_id}")
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
+    ) -> tuple[HealthConversationModel, TriageEvaluationResult]:
+        """Records a user answer for a specific symptom and re-evaluates the conversation."""
+        logger.info(f"Recording answer '{node_id}'='{answer_value}' for conversation {conversation_id}")
+        conv_res = await self.session.execute(
+            select(HealthConversationModel)
+            .options(selectinload(HealthConversationModel.symptoms))
+            .where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
-        if not sess.symptom_id:
-            raise ValueError(f"Assessment session '{session_id}' has no primary symptom set.")
-
-        snapshot = dict(sess.raw_answers_snapshot or {})
-        snapshot[node_id] = answer_value
-        sess.raw_answers_snapshot = snapshot
-
-        # Also store individual AssessmentResponse entry
+        # Find symptom_id from question node
+        symptom_ids = [cs.symptom_id for cs in conv.symptoms]
         q_res = await self.session.execute(
             select(QuestionModel).where(
-                QuestionModel.symptom_id == sess.symptom_id,
+                QuestionModel.symptom_id.in_(symptom_ids),
                 QuestionModel.node_id == node_id
             )
         )
         q = q_res.scalar_one_or_none()
+        symptom_id = q.symptom_id if q else None
+
+        snapshot = dict(conv.raw_answers_snapshot or {})
+        snapshot[node_id] = answer_value
+        conv.raw_answers_snapshot = snapshot
 
         response_entry = AssessmentResponseModel(
             id=str(uuid.uuid4()),
-            session_id=session_id,
+            conversation_id=conversation_id,
+            symptom_id=symptom_id,
             question_id=q.id if q else None,
             node_id=node_id,
             answer_value=answer_value,
@@ -163,170 +175,180 @@ class TriageService:
         self.session.add(response_entry)
         await self.session.flush()
 
-        eval_result = await self.evaluate_assessment_session(session_id)
-        return sess, eval_result
+        eval_result = await self.evaluate_conversation(conversation_id, symptom_id)
+        return conv, eval_result
 
-    async def get_progress(self, session_id: str) -> tuple[AssessmentSessionModel, int]:
+    async def get_progress(self, conversation_id: str) -> tuple[HealthConversationModel, int]:
         """Retrieves session progress and count of recorded answers."""
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
+        conv_res = await self.session.execute(
+            select(HealthConversationModel).where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
-        answers_count = len(sess.raw_answers_snapshot or {})
-        return sess, answers_count
+        answers_count = len(conv.raw_answers_snapshot or {})
+        return conv, answers_count
 
-    async def get_result(self, session_id: str) -> tuple[AssessmentSessionModel, TriageEvaluationResult]:
-        """Loads and calculates the current or final result of a session."""
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
+    async def get_result(self, conversation_id: str) -> tuple[HealthConversationModel, TriageEvaluationResult]:
+        """Loads and calculates the current or final result of a conversation."""
+        conv_res = await self.session.execute(
+            select(HealthConversationModel)
+            .options(selectinload(HealthConversationModel.symptoms))
+            .where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
-        if not sess.symptom_id:
-            raise ValueError(f"Assessment session '{session_id}' has no primary symptom set.")
+        eval_result = await self.evaluate_conversation(conversation_id, None)
+        return conv, eval_result
 
-        eval_result = await self.evaluate_assessment_session(session_id)
-        return sess, eval_result
-
-    async def restart_session(self, session_id: str) -> AssessmentSessionModel:
-        """Restarts an assessment session by creating a new session with identical parameters."""
-        logger.info(f"Restarting assessment session {session_id}")
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
+    async def restart_conversation(self, conversation_id: str) -> HealthConversationModel:
+        """Restarts an assessment session by creating a new conversation with identical parameters."""
+        logger.info(f"Restarting conversation {conversation_id}")
+        conv_res = await self.session.execute(
+            select(HealthConversationModel).where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
-        # Mark previous session as ARCHIVED
-        sess.status = SessionStatus.ARCHIVED
+        conv.status = ConversationStatus.ARCHIVED
 
-        # Create new session
-        new_sess = AssessmentSessionModel(
+        new_conv = HealthConversationModel(
             id=str(uuid.uuid4()),
-            user_id=sess.user_id,
-            status=SessionStatus.ACTIVE,
-            consultation_mode=sess.consultation_mode,
-            language_code=sess.language_code,
-            created_offline=sess.created_offline,
+            user_id=conv.user_id,
+            status=ConversationStatus.ACTIVE,
+            consultation_mode=conv.consultation_mode,
+            language_code=conv.language_code,
+            created_offline=conv.created_offline,
             conducted_at=datetime.now(timezone.utc),
             raw_answers_snapshot={}
         )
-        self.session.add(new_sess)
+        self.session.add(new_conv)
         await self.session.flush()
-        await self.session.refresh(new_sess)
-        return new_sess
+        await self.session.refresh(new_conv)
+        return new_conv
 
-    async def resolve_session(self, session_id: str) -> None:
-        """Marks a session as ARCHIVED so it doesn't show up in recent contexts."""
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False
+    async def resolve_conversation(self, conversation_id: str) -> None:
+        """Marks a conversation as ARCHIVED so it doesn't show up in recent contexts."""
+        conv_res = await self.session.execute(
+            select(HealthConversationModel).where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{session_id}' not found.")
-        sess.status = SessionStatus.ARCHIVED
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
+        conv.status = ConversationStatus.ARCHIVED
         await self.session.flush()
 
-    async def evaluate_assessment_session(
+    async def evaluate_conversation(
         self,
-        assessment_session_id: str
+        conversation_id: str,
+        active_symptom_id: Optional[str]
     ) -> TriageEvaluationResult:
         """Loads session and related DB entities, then evaluates rules."""
         result = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == assessment_session_id,
-                AssessmentSessionModel.is_deleted == False,  # noqa: E712
-            )
-        )
-        sess = result.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Assessment session '{assessment_session_id}' not found.")
-
-        if not sess.symptom_id:
-            raise ValueError(f"Assessment session '{assessment_session_id}' has no primary symptom set.")
-
-        # Load questions for symptom (eagerly load options to avoid lazy-load in async context)
-        q_result = await self.session.execute(
-            select(QuestionModel)
-            .options(selectinload(QuestionModel.options))
-            .where(
-                QuestionModel.symptom_id == sess.symptom_id,
-                QuestionModel.is_deleted == False,  # noqa: E712
-            )
-            .order_by(QuestionModel.order_index)
-        )
-        questions = list(q_result.scalars().all())
-
-        # Load active rules for symptom (eagerly load severity_level and health_concern)
-        rule_result = await self.session.execute(
-            select(TriageRuleModel)
+            select(HealthConversationModel)
             .options(
-                selectinload(TriageRuleModel.severity_level),
-                selectinload(TriageRuleModel.health_concern),
+                selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom)
             )
             .where(
-                TriageRuleModel.symptom_id == sess.symptom_id,
-                TriageRuleModel.is_active == True,  # noqa: E712
-                TriageRuleModel.is_deleted == False,  # noqa: E712
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False,
             )
         )
-        rules = list(rule_result.scalars().all())
+        conv = result.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
+
+        active_symptom = None
+        all_symptom_ids = [cs.symptom_id for cs in conv.symptoms]
+
+        if active_symptom_id:
+            active_symptom = next((cs for cs in conv.symptoms if cs.symptom_id == active_symptom_id), None)
+
+        # Load questions for all symptoms
+        all_questions = {}
+        if all_symptom_ids:
+            q_result = await self.session.execute(
+                select(QuestionModel)
+                .options(selectinload(QuestionModel.options))
+                .where(
+                    QuestionModel.symptom_id.in_(all_symptom_ids),
+                    QuestionModel.is_deleted == False,
+                )
+                .order_by(QuestionModel.order_index)
+            )
+            for q in q_result.scalars():
+                if q.symptom_id not in all_questions:
+                    all_questions[q.symptom_id] = []
+                all_questions[q.symptom_id].append(q)
+
+        # Load active rules for all symptoms
+        all_rules = {}
+        if all_symptom_ids:
+            rule_result = await self.session.execute(
+                select(TriageRuleModel)
+                .options(
+                    selectinload(TriageRuleModel.severity_level),
+                    selectinload(TriageRuleModel.health_concern),
+                )
+                .where(
+                    TriageRuleModel.symptom_id.in_(all_symptom_ids),
+                    TriageRuleModel.is_active == True,
+                    TriageRuleModel.is_deleted == False,
+                )
+            )
+            for r in rule_result.scalars():
+                if r.symptom_id not in all_rules:
+                    all_rules[r.symptom_id] = []
+                all_rules[r.symptom_id].append(r)
 
         # Load recommendations scoped to the health concerns referenced by these rules.
-        # This avoids a full-table scan as the knowledge base grows.
-        concern_ids = list(
-            {r.health_concern_id for r in rules if r.health_concern_id}
-        )
+        concern_ids = set()
+        for rules in all_rules.values():
+            for r in rules:
+                if r.health_concern_id:
+                    concern_ids.add(r.health_concern_id)
+
         if concern_ids:
             rec_query = select(RecommendationModel).where(
                 RecommendationModel.health_concern_id.in_(concern_ids),
-                RecommendationModel.is_active == True,  # noqa: E712
+                RecommendationModel.is_active == True,
             )
         else:
-            # No rules have a health concern — load generic active recommendations
             rec_query = select(RecommendationModel).where(
-                RecommendationModel.is_active == True,  # noqa: E712
+                RecommendationModel.is_active == True,
             ).limit(20)
+        
         rec_result = await self.session.execute(rec_query)
-        recommendations = list(rec_result.scalars().all())
+        all_recommendations = list(rec_result.scalars().all())
 
         # Run rule engine
-        eval_result = self.engine.evaluate(
-            session=sess,
-            questions=questions,
-            rules=rules,
-            recommendations=recommendations
+        eval_result = self.engine.evaluate_conversation(
+            conversation=conv,
+            active_symptom=active_symptom,
+            all_questions=all_questions,
+            all_rules=all_rules,
+            all_recommendations=all_recommendations
         )
 
         # Update session status if complete or emergency
         if not eval_result.next_question:
-            sess.status = SessionStatus.COMPLETED
-            if eval_result.severity:
-                # Update severity level id if present in database
-                sev_res = await self.session.execute(
-                    select(SeverityLevelModel).where(SeverityLevelModel.code == eval_result.severity)
-                )
-                sev = sev_res.scalar_one_or_none()
-                if sev:
-                    sess.severity_level_id = sev.id
+            conv.status = ConversationStatus.COMPLETED
             await self.session.flush()
 
         return eval_result
@@ -336,19 +358,19 @@ class TriageService:
         user_id: str,
         limit: int = 20,
         offset: int = 0,
-    ) -> List[AssessmentSessionModel]:
-        """Retrieves paginated triage session history for a user."""
+    ) -> List[HealthConversationModel]:
+        """Retrieves paginated health conversation history for a user."""
         result = await self.session.execute(
-            select(AssessmentSessionModel)
+            select(HealthConversationModel)
             .options(
-                selectinload(AssessmentSessionModel.symptom),
-                selectinload(AssessmentSessionModel.severity_level),
+                selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom),
+                selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.severity_level)
             )
             .where(
-                AssessmentSessionModel.user_id == user_id,
-                AssessmentSessionModel.is_deleted == False,
+                HealthConversationModel.user_id == user_id,
+                HealthConversationModel.is_deleted == False,
             )
-            .order_by(AssessmentSessionModel.conducted_at.desc())
+            .order_by(HealthConversationModel.conducted_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -364,31 +386,22 @@ class TriageService:
         )
         return result.scalar_one_or_none()
 
-    async def get_conversation_transcript(self, session_id: str) -> dict:
-        sess_res = await self.session.execute(
-            select(AssessmentSessionModel).where(
-                AssessmentSessionModel.id == session_id,
-                AssessmentSessionModel.is_deleted == False
+    async def get_conversation_transcript(self, conversation_id: str) -> dict:
+        conv_res = await self.session.execute(
+            select(HealthConversationModel)
+            .options(selectinload(HealthConversationModel.symptoms).selectinload(ConversationSymptomModel.symptom))
+            .where(
+                HealthConversationModel.id == conversation_id,
+                HealthConversationModel.is_deleted == False
             )
         )
-        sess = sess_res.scalar_one_or_none()
-        if not sess:
-            raise ValueError(f"Session '{session_id}' not found.")
-
-        symptom_name = None
-        symptom_slug = None
-        if sess.symptom_id:
-            sym_res = await self.session.execute(
-                select(SymptomModel).where(SymptomModel.id == sess.symptom_id)
-            )
-            sym = sym_res.scalar_one_or_none()
-            if sym:
-                symptom_name = sym.name_en
-                symptom_slug = sym.slug
+        conv = conv_res.scalar_one_or_none()
+        if not conv:
+            raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
         resp_res = await self.session.execute(
             select(AssessmentResponseModel)
-            .where(AssessmentResponseModel.session_id == session_id)
+            .where(AssessmentResponseModel.conversation_id == conversation_id)
             .order_by(AssessmentResponseModel.answered_at)
         )
         responses = list(resp_res.scalars().all())
@@ -399,22 +412,26 @@ class TriageService:
             "content": "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?"
         })
 
-        if symptom_name:
+        if conv.symptoms:
+            symptoms_list = ", ".join([cs.symptom.name_en for cs in conv.symptoms])
             messages.append({
                 "role": "USER",
-                "content": symptom_name
+                "content": symptoms_list
             })
 
-            for resp in responses:
-                q_res = await self.session.execute(
-                    select(QuestionModel)
-                    .options(selectinload(QuestionModel.options))
-                    .where(
-                        QuestionModel.symptom_id == sess.symptom_id,
-                        QuestionModel.node_id == resp.node_id
-                    )
+            # Fetch questions so we can match their text
+            symptom_ids = [cs.symptom_id for cs in conv.symptoms]
+            q_res = await self.session.execute(
+                select(QuestionModel)
+                .options(selectinload(QuestionModel.options))
+                .where(
+                    QuestionModel.symptom_id.in_(symptom_ids)
                 )
-                q = q_res.scalar_one_or_none()
+            )
+            questions_by_node = {q.node_id: q for q in q_res.scalars()}
+
+            for resp in responses:
+                q = questions_by_node.get(resp.node_id)
                 if q:
                     messages.append({
                         "role": "SYSTEM",
@@ -431,9 +448,8 @@ class TriageService:
                     })
 
         return {
-            "session_id": sess.id,
-            "status": sess.status.value if sess.status else None,
-            "symptom_name": symptom_name,
-            "symptom_slug": symptom_slug,
+            "session_id": conv.id,
+            "status": conv.status.value if conv.status else None,
+            "symptoms": [cs.symptom.name_en for cs in conv.symptoms] if conv.symptoms else [],
             "messages": messages
         }
