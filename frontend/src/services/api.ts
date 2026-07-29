@@ -78,6 +78,7 @@ import { useNetworkStore } from '../stores/network-store'
 import { ClientTriageService } from '../features/assessment/services/ClientTriageService'
 import { dbService } from './DatabaseService'
 
+export const assessmentApi = {
   start: async (mode: 'TEXT' | 'VOICE' = 'TEXT') => {
     const doOffline = async () => {
       const result = await ClientTriageService.startConversation('Offline Start', 'en')
@@ -93,7 +94,7 @@ import { dbService } from './DatabaseService'
         created_offline: false,
       })
     } catch (e: any) {
-      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error' || e.code === 'ECONNABORTED' || (e.message && e.message.includes('timeout'))) {
         useNetworkStore.getState().setOnline(false)
         return doOffline()
       }
@@ -123,7 +124,7 @@ import { dbService } from './DatabaseService'
         user_text: userText || symptoms[0],
       });
     } catch (e: any) {
-      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error' || e.code === 'ECONNABORTED' || (e.message && e.message.includes('timeout'))) {
         useNetworkStore.getState().setOnline(false)
         return doOffline()
       }
@@ -147,7 +148,7 @@ import { dbService } from './DatabaseService'
         answer_value: Array.isArray(answer) ? answer.join(',') : answer,
       })
     } catch (e: any) {
-      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error') {
+      if (e.code === 'ERR_NETWORK' || e.message === 'Network Error' || e.code === 'ECONNABORTED' || (e.message && e.message.includes('timeout'))) {
         useNetworkStore.getState().setOnline(false)
         return doOffline()
       }

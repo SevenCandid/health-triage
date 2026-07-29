@@ -62,7 +62,12 @@ export class ClientTriageService {
 
     if (!kb) {
       console.warn("Using bundled static knowledge base for offline triage.")
-      kb = fallbackKnowledgeBase as any
+      if (typeof fallbackKnowledgeBase === 'string') {
+        const res = await fetch(fallbackKnowledgeBase)
+        kb = await res.json()
+      } else {
+        kb = (fallbackKnowledgeBase as any).default || fallbackKnowledgeBase
+      }
     }
 
     if (!conversation || !kb) {
