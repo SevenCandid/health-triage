@@ -312,7 +312,14 @@ export default function VoicePage() {
       }
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.detail || getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      let msg = getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      if (error.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          msg = error.response.data.detail[0]?.msg || msg
+        } else if (typeof error.response.data.detail === 'string') {
+          msg = error.response.data.detail
+        }
+      }
       speakText(msg, () => {
         startListening()
       })
@@ -336,7 +343,14 @@ export default function VoicePage() {
       }
     },
     onError: (error: any) => {
-      const msg = error.response?.data?.detail || getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      let msg = getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      if (error.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          msg = error.response.data.detail[0]?.msg || msg
+        } else if (typeof error.response.data.detail === 'string') {
+          msg = error.response.data.detail
+        }
+      }
       speakText(msg, () => {
         startListening()
       })

@@ -41,6 +41,7 @@ class GeminiService:
             "Your task is to identify the primary symptom they are describing and map it to exactly ONE "
             "of the allowed canonical symptom slugs. If the user mentions multiple, pick the most severe/primary one. "
             f"If none match or the input is vague (like 'I feel strange'), return a helpful, empathetic follow-up question asking for more specific symptoms. Prefix this question with 'CLARIFY: '. The question MUST be in {lang}.\n\n"
+            f"CRITICAL: If the user explicitly states they have no other symptoms, refuses to clarify, or is frustrated (e.g. 'that is all', 'nothing else'), DO NOT ask another CLARIFY question. Instead, map it to 'fatigue' as a safe default fallback.\n\n"
             f"Allowed slugs: {json.dumps(allowed_slugs)}\n\n"
             f"User text: \"{text}\"\n\n"
             "Return ONLY the exact slug string OR 'CLARIFY: your question'."

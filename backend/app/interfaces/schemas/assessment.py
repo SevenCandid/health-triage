@@ -30,7 +30,7 @@ class AssessmentStartResponse(BaseModel):
 class AssessmentSymptomsRequest(BaseModel):
     """Payload to set the initial primary symptom for a session."""
     session_id: str
-    symptom_slug: str = Field(..., min_length=1, max_length=80)
+    symptom_slug: str = Field(..., min_length=1, max_length=500)
     user_text: Optional[str] = None
 
 
