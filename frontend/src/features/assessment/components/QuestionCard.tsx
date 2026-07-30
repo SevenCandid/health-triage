@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import type { FollowUpQuestion } from '@/types'
+import { useSettingsStore } from '@/stores/settings-store'
 
 interface QuestionCardProps {
   question: FollowUpQuestion
@@ -12,6 +13,7 @@ interface QuestionCardProps {
 }
 
 export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardProps) {
+  const { appLanguage } = useSettingsStore()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [textValue, setTextValue] = useState('')
 
@@ -45,14 +47,14 @@ export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardP
               disabled={isSubmitting}
               className="flex-1 rounded-xl border border-green-500/30 bg-green-500/5 py-3 text-sm font-semibold text-green-600 transition-colors hover:bg-green-500/15 dark:text-green-400"
             >
-              <Check className="w-4 h-4" /> Yes
+              <Check className="w-4 h-4" /> {appLanguage === 'tw' ? 'Yiw' : 'Yes'}
             </button>
             <button
               onClick={() => handleSingleSelect('no')}
               disabled={isSubmitting}
               className="flex-1 rounded-xl border border-red-500/30 bg-red-500/5 py-3 text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/15 dark:text-red-400"
             >
-              ✕ No
+              ✕ {appLanguage === 'tw' ? 'Daabi' : 'No'}
             </button>
           </div>
         )
@@ -77,7 +79,7 @@ export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardP
                     <span className="h-2 w-2 rounded-full bg-current" />
                   )}
                 </span>
-                {opt.label_en}
+                {appLanguage === 'tw' ? opt.label_tw || opt.label_en : opt.label_en}
               </button>
             ))}
           </div>
@@ -104,7 +106,7 @@ export function QuestionCard({ question, onSubmit, isSubmitting }: QuestionCardP
                     <span className={`h-4 w-4 shrink-0 rounded border-2 flex items-center justify-center text-xs ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-current'}`}>
                       {isSelected && <Check className="w-4 h-4" />}
                     </span>
-                    {opt.label_en}
+                    <span className="flex-1">{appLanguage === 'tw' ? opt.label_tw || opt.label_en : opt.label_en}</span>
                   </button>
                 )
               })}

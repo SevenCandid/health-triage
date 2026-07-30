@@ -10,6 +10,7 @@ import { ChatBubble } from '../components/ChatBubble'
 import { TypingIndicator } from '../components/TypingIndicator'
 import { QuestionCard } from '../components/QuestionCard'
 import { AssessmentNotice } from '../components/AssessmentNotice'
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 import { getRandomPrompt } from '@/lib/conversations'
 
 interface ChatMessage {
@@ -263,6 +264,9 @@ export default function AssessmentPage() {
       {/* ── Scrollable Chat Area ───────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="mx-auto max-w-2xl flex flex-col gap-4">
+          <div className="flex justify-end">
+            <LanguageSwitcher />
+          </div>
           <AssessmentNotice />
 
           <div className="flex flex-col gap-3">

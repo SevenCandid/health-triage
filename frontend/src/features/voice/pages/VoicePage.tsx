@@ -17,6 +17,7 @@ const SpeechRecognition = (window as any).SpeechRecognition || (window as any).w
 import { useAuthStore } from '@/stores/auth-store'
 import { GuestBlock } from '@/components/common/GuestBlock'
 import { AssessmentNotice } from '@/features/assessment/components/AssessmentNotice'
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher'
 
 export default function VoicePage() {
   const navigate = useNavigate()
@@ -113,6 +114,31 @@ export default function VoicePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    if (recognitionRef.current) {
+      const localeMap: Record<string, string> = {
+        'en': 'en-US',
+        'tw': 'tw-GH',
+        'fr': 'fr-FR',
+        'ar': 'ar-SA',
+        'pt': 'pt-PT'
+      }
+      recognitionRef.current.lang = localeMap[appLanguage] || 'en-US'
+      
+      // Stop current speech
+      window.speechSynthesis.cancel()
+      
+      if (voiceState === 'LISTENING') {
+        recognitionRef.current.stop()
+        setTimeout(() => {
+          if (isComponentMounted.current) {
+            try { recognitionRef.current.start() } catch (e) {}
+          }
+        }, 100)
+      }
+    }
+  }, [appLanguage])
+
   const speakText = useCallback((text: string, onEnd?: () => void, displayText?: string) => {
     if (!isComponentMounted.current) return
 
@@ -139,16 +165,33 @@ export default function VoicePage() {
     }
 
     setVoiceState('SPEAKING')
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.rate = voiceRate
+    
+    // Twi optimizations
+    let finalText = text
+    let rate = voiceRate
+    if (appLanguage === 'tw') {
+      rate = voiceRate * 0.85
+      finalText = text.replace(/([.!?])/g, '$1, , ')
+    }
+
+    const utterance = new SpeechSynthesisUtterance(finalText)
+    utterance.rate = rate
     utterance.pitch = voicePitch
     utterance.volume = voiceVolume
     
-    if (preferredVoiceURI) {
-      const voices = window.speechSynthesis.getVoices()
-      const selected = voices.find(v => v.voiceURI === preferredVoiceURI)
-      if (selected) utterance.voice = selected
+    const voices = window.speechSynthesis.getVoices()
+    let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
+    
+    if (appLanguage === 'tw') {
+      const twiVoices = voices.filter(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+      if (twiVoices.length > 0) {
+        selectedVoice = twiVoices[0]
+      } else {
+        selectedVoice = voices.find(v => v.lang === 'en-NG' || v.lang === 'en-ZA' || v.lang === 'en-GB') || selectedVoice
+      }
     }
+
+    if (selectedVoice) utterance.voice = selectedVoice
 
     utterance.onend = handleEnd
     utterance.onerror = handleEnd
@@ -159,15 +202,34 @@ export default function VoicePage() {
   const manualSpeak = () => {
      window.speechSynthesis.cancel()
      setVoiceState('SPEAKING')
-     const utterance = new SpeechSynthesisUtterance(systemMessage)
-     utterance.rate = voiceRate
+     
+     // Twi optimizations
+     let finalText = systemMessage
+     let rate = voiceRate
+     if (appLanguage === 'tw') {
+       rate = voiceRate * 0.85
+       finalText = systemMessage.replace(/([.!?])/g, '$1, , ')
+     }
+ 
+     const utterance = new SpeechSynthesisUtterance(finalText)
+     utterance.rate = rate
      utterance.pitch = voicePitch
      utterance.volume = voiceVolume
-     if (preferredVoiceURI) {
-       const voices = window.speechSynthesis.getVoices()
-       const selected = voices.find(v => v.voiceURI === preferredVoiceURI)
-       if (selected) utterance.voice = selected
+     
+     const voices = window.speechSynthesis.getVoices()
+     let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
+     
+     if (appLanguage === 'tw') {
+       const twiVoices = voices.filter(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+       if (twiVoices.length > 0) {
+         selectedVoice = twiVoices[0]
+       } else {
+         selectedVoice = voices.find(v => v.lang === 'en-NG' || v.lang === 'en-ZA' || v.lang === 'en-GB') || selectedVoice
+       }
      }
+ 
+     if (selectedVoice) utterance.voice = selectedVoice
+
      utterance.onend = () => { setVoiceState('IDLE') }
      utterance.onerror = () => { setVoiceState('IDLE') }
      window.speechSynthesis.speak(utterance)
@@ -188,11 +250,15 @@ export default function VoicePage() {
       }
 
       if (res.data.pending_symptom) {
-        const t = `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+        const t = appLanguage === 'tw' 
+          ? `Nnɛ woka kyerɛɛ me sɛ wote ${res.data.pending_symptom}. Woda so ara te nka anaa?`
+          : `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
         textToSpeak += t
         textToDisplay = t
       } else {
-        const t = "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+        const t = appLanguage === 'tw'
+          ? "Akwaaba! Mɛyɛ dɛn atumi aboa wo nnɛ? Ɔhaw bɛn na wote nka?"
+          : "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
         textToSpeak += t
         textToDisplay = t
       }
@@ -487,6 +553,10 @@ export default function VoicePage() {
     <div className="fixed inset-0 flex flex-col bg-background overflow-hidden" style={{ top: '3.5rem', bottom: '0' }}>
       <div className="mx-auto flex h-full w-full max-w-2xl flex-col items-center justify-between px-3 py-4 sm:p-6 text-center">
       
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
+
       {showAssessmentNotice && (
          <div className="w-full mt-2 sm:mt-4 z-10 flex-shrink-0">
              <AssessmentNotice />
