@@ -1,4 +1,4 @@
-import { User, AlertTriangle, Phone, Siren, Activity } from 'lucide-react'
+import { User, AlertTriangle, Phone, Siren, Activity, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -125,14 +125,21 @@ export default function EmergencyPage() {
 
         {/* Doctor */}
         <Card className="flex flex-col gap-3 p-3 border border-primary/20">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" />‍<Activity className="w-4 h-4" />️</div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground">Doctor</p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                {doctorContact ? doctorContact.contact_name : 'Not saved'}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" />‍<Activity className="w-4 h-4" />️</div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-foreground">Doctor</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {doctorContact ? doctorContact.contact_name : 'Not saved'}
+                </p>
+              </div>
             </div>
+            {doctorContact && (
+              <button onClick={() => setAddMode('HEALTHCARE_PROVIDER')} className="p-1 -mr-1 text-muted-foreground hover:text-primary transition-colors">
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
           </div>
           {doctorContact ? (
             <button
@@ -153,14 +160,21 @@ export default function EmergencyPage() {
 
         {/* Emergency Contact */}
         <Card className="flex flex-col gap-3 p-3 border border-primary/20">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" /></div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-foreground">Contact</p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                {generalContact ? generalContact.contact_name : 'Not saved'}
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-base flex-shrink-0"><User className="w-4 h-4" /></div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-foreground">Contact</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {generalContact ? generalContact.contact_name : 'Not saved'}
+                </p>
+              </div>
             </div>
+            {generalContact && (
+              <button onClick={() => setAddMode('CONTACT')} className="p-1 -mr-1 text-muted-foreground hover:text-primary transition-colors">
+                <Plus className="w-4 h-4" />
+              </button>
+            )}
           </div>
           {generalContact ? (
             <button
