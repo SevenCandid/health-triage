@@ -132,9 +132,9 @@ export const assessmentApi = {
     }
   },
 
-  submitAnswer: async (sessionId: string, questionId: string, answer: string | string[]) => {
+  submitAnswer: async (sessionId: string, questionId: string, answerValue: string | string[], answerRawText: string) => {
     const doOffline = async () => {
-      const result = await ClientTriageService.answerQuestion(sessionId, questionId, Array.isArray(answer) ? answer.join(',') : answer)
+      const result = await ClientTriageService.answerQuestion(sessionId, questionId, Array.isArray(answerValue) ? answerValue.join(',') : answerValue)
       return { data: result } as any
     }
 
@@ -145,7 +145,8 @@ export const assessmentApi = {
       return await apiClient.post<AnswerSubmitResponse>('/assessment/answer', {
         session_id: sessionId,
         node_id: questionId,
-        answer_value: Array.isArray(answer) ? answer.join(',') : answer,
+        answer_value: Array.isArray(answerValue) ? answerValue.join(',') : answerValue,
+        answer_raw_text: answerRawText
       })
     } catch (e: any) {
       if (e.code === 'ERR_NETWORK' || e.message === 'Network Error' || e.code === 'ECONNABORTED' || (e.message && e.message.includes('timeout'))) {

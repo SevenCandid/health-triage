@@ -320,8 +320,8 @@ export default function VoicePage() {
 
   // 3. Submit Answer Mutation
   const answerMutation = useMutation({
-    mutationFn: ({ sid, answerText, nodeId }: { sid: string; answerText: string; nodeId: string }) =>
-      assessmentApi.submitAnswer(sid, nodeId, answerText),
+    mutationFn: ({ sid, answerValue, answerRawText, nodeId }: { sid: string; answerValue: string; answerRawText: string; nodeId: string }) =>
+      assessmentApi.submitAnswer(sid, nodeId, answerValue, answerRawText),
     onSuccess: (res) => {
       if (res.data.is_completed) {
         setIsConfirmingCompletion(true)

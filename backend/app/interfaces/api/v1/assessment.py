@@ -107,7 +107,15 @@ async def set_symptoms(
         # Determine language for extraction
         sess, _ = await service.get_progress(payload.session_id)
         
-        normalized_slug = normalizer.normalize_with_ai(input_text, sess.language_code, gemini_service) or payload.symptom_slug
+        normalized_slug = normalizer.normalize_with_ai(input_text, sess.language_code, gemini_service)
+        
+        # If AI and fuzzy matching fail, but the input was a valid slug (e.g. from UI buttons), use it
+        if not normalized_slug and payload.symptom_slug in normalizer.dictionary:
+            normalized_slug = payload.symptom_slug
+            
+        if not normalized_slug:
+            raise ValueError("I couldn't understand that symptom. Could you rephrase it?")
+            
         sess, sym, eval_result = await service.add_symptom(
             conversation_id=payload.session_id,
             symptom_slug=normalized_slug,

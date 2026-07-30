@@ -152,8 +152,8 @@ export default function AssessmentPage() {
 
   // 3. Submit Answer Mutation
   const answerMutation = useMutation({
-    mutationFn: ({ answerText, nodeId }: { answerText: string; nodeId: string }) =>
-      assessmentApi.submitAnswer(sessionId!, nodeId, answerText),
+    mutationFn: ({ nodeId, answerText }: { nodeId: string; answerText: string }) =>
+      assessmentApi.submitAnswer(sessionId!, nodeId, answerText, answerText),
     onSuccess: (res) => {
       setIsTypingSimulated(true)
       setTimeout(() => {
