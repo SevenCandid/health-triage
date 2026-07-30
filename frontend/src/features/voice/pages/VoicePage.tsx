@@ -51,6 +51,7 @@ export default function VoicePage() {
   const recognitionRef = useRef<any>(null)
   const isComponentMounted = useRef(true)
   const handleUserUtteranceRef = useRef<(text: string) => void>(() => {})
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -183,9 +184,16 @@ export default function VoicePage() {
 
     if (selectedVoice) utterance.voice = selectedVoice
 
-    utterance.onend = handleEnd
-    utterance.onerror = handleEnd
+    utterance.onend = () => {
+      activeUtteranceRef.current = null
+      handleEnd()
+    }
+    utterance.onerror = () => {
+      activeUtteranceRef.current = null
+      handleEnd()
+    }
 
+    activeUtteranceRef.current = utterance
     window.speechSynthesis.speak(utterance)
   }, [preferredVoiceURI, voiceRate, voicePitch, voiceVolume, autoReadResponses, handsFreeMode])
 
@@ -209,8 +217,15 @@ export default function VoicePage() {
  
      if (selectedVoice) utterance.voice = selectedVoice
 
-     utterance.onend = () => { setVoiceState('IDLE') }
-     utterance.onerror = () => { setVoiceState('IDLE') }
+     utterance.onend = () => { 
+       activeUtteranceRef.current = null
+       setVoiceState('IDLE') 
+     }
+     utterance.onerror = () => { 
+       activeUtteranceRef.current = null
+       setVoiceState('IDLE') 
+     }
+     activeUtteranceRef.current = utterance
      window.speechSynthesis.speak(utterance)
   }
 
@@ -392,7 +407,7 @@ export default function VoicePage() {
     completeSession()
     const msg = appLanguage === 'tw' ? "Meresiesie wo nhwehwɛmu no mprempren..." : "I'm generating your assessment now..."
     speakText(msg, () => {
-        if (sessionId) resultMutation.mutate(sessionId)
+        if (sessionId) navigate(`/assessment/${sessionId}/result`)
     })
   }
 
