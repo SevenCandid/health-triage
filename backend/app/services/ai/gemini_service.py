@@ -60,7 +60,7 @@ class GeminiService:
             return result if result in allowed_slugs else None
         except Exception as e:
             logger.warning(f"Gemini extract_symptom error with {model_name}: {e}")
-            if "429" in str(e) and model_name != "gemini-1.5-flash":
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
                 logger.info("Attempting fallback to gemini-1.5-flash...")
                 try:
                     response = self.client.models.generate_content(
@@ -100,7 +100,7 @@ class GeminiService:
             return response.text.strip()
         except Exception as e:
             logger.warning(f"Gemini translate_question error with {model_name}: {e}")
-            if "429" in str(e) and model_name != "gemini-1.5-flash":
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
                 try:
                     response = self.client.models.generate_content(
                         model="gemini-1.5-flash",
@@ -146,7 +146,7 @@ class GeminiService:
             return response.text.strip()
         except Exception as e:
             logger.warning(f"Gemini generate_explanation error with {model_name}: {e}")
-            if "429" in str(e) and model_name != "gemini-1.5-flash":
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
                 try:
                     response = self.client.models.generate_content(
                         model="gemini-1.5-flash",
