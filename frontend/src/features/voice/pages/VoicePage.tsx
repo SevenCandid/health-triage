@@ -311,8 +311,9 @@ export default function VoicePage() {
          speakText(getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw'), () => startListening())
       }
     },
-    onError: () => {
-      speakText(getRandomPrompt('errors', appLanguage as 'en' | 'tw'), () => {
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      speakText(msg, () => {
         startListening()
       })
     }
@@ -334,8 +335,9 @@ export default function VoicePage() {
         speakText(`${transition}. ${qText}`, () => startListening())
       }
     },
-    onError: () => {
-      speakText(getRandomPrompt('errors', appLanguage as 'en' | 'tw'), () => {
+    onError: (error: any) => {
+      const msg = error.response?.data?.detail || getRandomPrompt('errors', appLanguage as 'en' | 'tw')
+      speakText(msg, () => {
         startListening()
       })
     }
