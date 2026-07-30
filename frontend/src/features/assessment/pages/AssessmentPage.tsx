@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { assessmentApi } from '@/services/api'
 import { useAssessmentStore } from '@/stores/assessment-store'
+import { useSettingsStore } from '@/stores/settings-store'
 import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -28,6 +29,7 @@ const COMMON_SYMPTOMS = [
 export default function AssessmentPage() {
   const navigate = useNavigate()
   const { addToast } = useToast()
+  const { appLanguage } = useSettingsStore()
 
   const {
     sessionId,
@@ -68,13 +70,15 @@ export default function AssessmentPage() {
         setTranscript([{
           id: crypto.randomUUID(),
           role: 'SYSTEM',
-          content: `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
+          content: appLanguage === 'tw' 
+            ? `Nnɛ woka kyerɛɛ me sɛ wote ${res.data.pending_symptom}. Woda so ara te nka anaa?`
+            : `Earlier today you mentioned ${res.data.pending_symptom}. Are you still experiencing it?`
         }])
       } else {
         setTranscript([{
           id: crypto.randomUUID(),
           role: 'SYSTEM',
-          content: getRandomPrompt('greetings')
+          content: getRandomPrompt('greetings', appLanguage as 'en' | 'tw')
         }])
       }
     },
@@ -125,14 +129,14 @@ export default function AssessmentPage() {
           setTranscript(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'SYSTEM',
-            content: getRandomPrompt('sufficientInfo')
+            content: getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw')
           }])
         } else {
           setCurrentQuestion(res.data.next_question)
           setTranscript(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'SYSTEM',
-            content: res.data.next_question!.question_text_en
+            content: appLanguage === 'tw' ? res.data.next_question!.question_text_tw || res.data.next_question!.question_text_en : res.data.next_question!.question_text_en
           }])
         }
       }, 700)
@@ -141,7 +145,7 @@ export default function AssessmentPage() {
       setTranscript(prev => [...prev, {
         id: crypto.randomUUID(),
         role: 'SYSTEM',
-        content: getRandomPrompt('errors')
+        content: getRandomPrompt('errors', appLanguage as 'en' | 'tw')
       }])
     }
   })
@@ -159,14 +163,14 @@ export default function AssessmentPage() {
           setTranscript(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'SYSTEM',
-            content: getRandomPrompt('sufficientInfo')
+            content: getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw')
           }])
         } else if (res.data.next_question) {
           setCurrentQuestion(res.data.next_question)
           setTranscript(prev => [...prev, {
             id: crypto.randomUUID(),
             role: 'SYSTEM',
-            content: res.data.next_question!.question_text_en
+            content: appLanguage === 'tw' ? res.data.next_question!.question_text_tw || res.data.next_question!.question_text_en : res.data.next_question!.question_text_en
           }])
         }
       }, 600)
@@ -213,8 +217,8 @@ export default function AssessmentPage() {
     }
     setTranscript(prev => [
       ...prev,
-      { id: crypto.randomUUID(), role: 'USER', content: "No, something else" },
-      { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('greetings') }
+      { id: crypto.randomUUID(), role: 'USER', content: appLanguage === 'tw' ? "Daabi, biribi foforo" : "No, something else" },
+      { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('greetings', appLanguage as 'en' | 'tw') }
     ])
     setShowPendingConfirmation(false)
     setShowSymptomChips(true)
@@ -228,7 +232,7 @@ export default function AssessmentPage() {
 
   const handleGenerateAssessment = () => {
     setSufficientInfoConfirmation(false)
-    setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('transitions') }])
+    setTranscript(prev => [...prev, { id: crypto.randomUUID(), role: 'SYSTEM', content: getRandomPrompt('transitions', appLanguage as 'en' | 'tw') }])
     setIsTypingSimulated(true)
     setTimeout(() => {
       setIsTypingSimulated(false)

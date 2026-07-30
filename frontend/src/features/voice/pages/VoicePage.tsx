@@ -165,17 +165,8 @@ export default function VoicePage() {
     }
 
     setVoiceState('SPEAKING')
-    
-    // Twi optimizations
-    let finalText = text
-    let rate = voiceRate
-    if (appLanguage === 'tw') {
-      rate = voiceRate * 0.85
-      finalText = text.replace(/([.!?])/g, '$1, , ')
-    }
-
-    const utterance = new SpeechSynthesisUtterance(finalText)
-    utterance.rate = rate
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.rate = voiceRate
     utterance.pitch = voicePitch
     utterance.volume = voiceVolume
     
@@ -183,11 +174,9 @@ export default function VoicePage() {
     let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
     
     if (appLanguage === 'tw') {
-      const twiVoices = voices.filter(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
-      if (twiVoices.length > 0) {
-        selectedVoice = twiVoices[0]
-      } else {
-        selectedVoice = voices.find(v => v.lang === 'en-NG' || v.lang === 'en-ZA' || v.lang === 'en-GB') || selectedVoice
+      const twiVoice = voices.find(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+      if (twiVoice) {
+        selectedVoice = twiVoice
       }
     }
 
@@ -202,17 +191,8 @@ export default function VoicePage() {
   const manualSpeak = () => {
      window.speechSynthesis.cancel()
      setVoiceState('SPEAKING')
-     
-     // Twi optimizations
-     let finalText = systemMessage
-     let rate = voiceRate
-     if (appLanguage === 'tw') {
-       rate = voiceRate * 0.85
-       finalText = systemMessage.replace(/([.!?])/g, '$1, , ')
-     }
- 
-     const utterance = new SpeechSynthesisUtterance(finalText)
-     utterance.rate = rate
+     const utterance = new SpeechSynthesisUtterance(systemMessage)
+     utterance.rate = voiceRate
      utterance.pitch = voicePitch
      utterance.volume = voiceVolume
      
@@ -220,11 +200,9 @@ export default function VoicePage() {
      let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
      
      if (appLanguage === 'tw') {
-       const twiVoices = voices.filter(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
-       if (twiVoices.length > 0) {
-         selectedVoice = twiVoices[0]
-       } else {
-         selectedVoice = voices.find(v => v.lang === 'en-NG' || v.lang === 'en-ZA' || v.lang === 'en-GB') || selectedVoice
+       const twiVoice = voices.find(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+       if (twiVoice) {
+         selectedVoice = twiVoice
        }
      }
  
@@ -312,26 +290,29 @@ export default function VoicePage() {
       assessmentApi.submitSymptoms(sid, symptoms),
     onSuccess: (res) => {
       if (res.data.is_emergency) {
-        speakText("I'm concerned about what you've shared. I'm going to ask a few important questions so I can provide the safest guidance.", () => {
+        const emergencyMsg = appLanguage === 'tw'
+          ? "Asɛm a woaka no yɛ aniberesɛm. Mebisa wo nsɛm kakra na matumi aboa wo yiye."
+          : "I'm concerned about what you've shared. I'm going to ask a few important questions so I can provide the safest guidance."
+        speakText(emergencyMsg, () => {
            if (res.data.next_question) {
               setCurrentQuestion(res.data.next_question)
-              askQuestion(res.data.next_question.question_text_en)
+              askQuestion(appLanguage === 'tw' ? res.data.next_question.question_text_tw || res.data.next_question.question_text_en : res.data.next_question.question_text_en)
            }
         })
       } else if (res.data.is_completed) {
          setIsConfirmingCompletion(true)
-         speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
+         speakText(getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw'), () => startListening())
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
-        askQuestion(res.data.next_question.question_text_en)
+        askQuestion(appLanguage === 'tw' ? res.data.next_question.question_text_tw || res.data.next_question.question_text_en : res.data.next_question.question_text_en)
       } else {
          // No next question, meaning it's ready for assessment generation.
          setIsConfirmingCompletion(true)
-         speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
+         speakText(getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw'), () => startListening())
       }
     },
     onError: () => {
-      speakText("I couldn't quite understand that symptom. Could you please rephrase it?", () => {
+      speakText(getRandomPrompt('errors', appLanguage as 'en' | 'tw'), () => {
         startListening()
       })
     }
@@ -344,16 +325,17 @@ export default function VoicePage() {
     onSuccess: (res) => {
       if (res.data.is_completed) {
         setIsConfirmingCompletion(true)
-        speakText("I think I have enough information. Before I prepare your assessment, is there anything else you'd like to tell me?", () => startListening())
+        speakText(getRandomPrompt('sufficientInfo', appLanguage as 'en' | 'tw'), () => startListening())
       } else if (res.data.next_question) {
         setCurrentQuestion(res.data.next_question)
         // Add a conversational transition before the next question
-        const transition = getRandomPrompt('transitions')
-        speakText(`${transition}. ${res.data.next_question.question_text_en}`, () => startListening())
+        const transition = getRandomPrompt('transitions', appLanguage as 'en' | 'tw')
+        const qText = appLanguage === 'tw' ? res.data.next_question.question_text_tw || res.data.next_question.question_text_en : res.data.next_question.question_text_en
+        speakText(`${transition}. ${qText}`, () => startListening())
       }
     },
     onError: () => {
-      speakText("I didn't quite catch that. Could you repeat your answer?", () => {
+      speakText(getRandomPrompt('errors', appLanguage as 'en' | 'tw'), () => {
         startListening()
       })
     }
@@ -364,22 +346,35 @@ export default function VoicePage() {
       mutationFn: (sid: string) => assessmentApi.getResult(sid),
       onSuccess: (res) => {
          const result = res.data
-         let resultText = `Assessment Summary. ${result.explanation}. `
+         let resultText = appLanguage === 'tw' 
+            ? `Nhwehwɛmu no aba. ${result.explanation}. `
+            : `Assessment Summary. ${result.explanation}. `
          if (result.recommendations && result.recommendations.length > 0) {
-             resultText += `Recommended next steps: ${result.recommendations.join(', ')}. `
+             const recs = result.recommendations.join(', ')
+             resultText += appLanguage === 'tw'
+                 ? `Akwankyerɛ: ${recs}. `
+                 : `Recommended next steps: ${recs}. `
          }
-         resultText += "Is there anything else you'd like to discuss today?"
+         resultText += appLanguage === 'tw'
+            ? "Biribi foforo wɔ hɔ a wopɛ sɛ yɛka ho asɛm nnɛ?"
+            : "Is there anything else you'd like to discuss today?"
          
          speakText(resultText, () => startListening())
       },
       onError: () => {
-          speakText("I'm sorry, I encountered an error while generating your assessment. Please open the results page manually.", () => navigate(`/assessment/${sessionId}/result`))
+          speakText(
+            appLanguage === 'tw'
+              ? "Kafra, mfomso bi aba. Bubu kɔ nsunsuanso kratafa no so."
+              : "I'm sorry, I encountered an error while generating your assessment. Please open the results page manually.", 
+            () => navigate(`/assessment/${sessionId}/result`)
+          )
       }
   })
 
   const handleCompletion = () => {
     completeSession()
-    speakText("I'm generating your assessment now...", () => {
+    const msg = appLanguage === 'tw' ? "Meresiesie wo nhwehwɛmu no mprempren..." : "I'm generating your assessment now..."
+    speakText(msg, () => {
         if (sessionId) resultMutation.mutate(sessionId)
     })
   }

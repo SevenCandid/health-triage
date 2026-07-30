@@ -15,6 +15,18 @@ class ConnectivityService {
     window.addEventListener('offline', () => {
       useNetworkStore.getState().setOnline(false)
     })
+
+    // Periodic check to recover if backend crashed but network is actually online
+    setInterval(() => {
+      if (navigator.onLine && !useNetworkStore.getState().isOnline) {
+        apiClient.get('/health').then(() => {
+          useNetworkStore.getState().setOnline(true)
+          this.syncOfflineData()
+        }).catch(() => {
+          // Still unreachable
+        })
+      }
+    }, 5000)
   }
 
   /**
