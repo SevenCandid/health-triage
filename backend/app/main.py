@@ -1,4 +1,4 @@
-"""Health Triage Assistant — FastAPI Application Entry Point.
+"""FirstAid+ — FastAPI Application Entry Point.
 
 This module initializes the FastAPI application with:
   - CORS middleware (configured for the React PWA frontend)
@@ -190,10 +190,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # FastAPI Application Instantiation
 # ---------------------------------------------------------------------------
 app = FastAPI(
-    title="Health Triage Assistant API",
+    title="FirstAid+ API",
     version=settings.VERSION,
     description=(
-        "### Offline-First Health Triage Assistant API\n\n"
+        "### Offline-First FirstAid+ API\n\n"
         "Production-grade RESTful API serving clinical triage evaluation, emergency dispatch, "
         "health profile management, and PWA outbox sync.\n\n"
         "**Key Architectural Highlights:**\n"

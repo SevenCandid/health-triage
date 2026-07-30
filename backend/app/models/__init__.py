@@ -1,7 +1,7 @@
 """Domain Models Package.
 
 This package contains the canonical SQLAlchemy 2.0 ORM model definitions
-for the Health Triage Assistant persistence layer.
+for the FirstAid+ persistence layer.
 
 Import order matters for Alembic autogenerate discovery:
 All models must be imported here so Base.metadata is fully populated.

@@ -36,7 +36,7 @@ export function Navbar() {
         {/* Logo */}
         <NavLink to="/" className="flex items-center gap-2 font-bold text-foreground">
           <span className="text-2xl"><HeartPulse className="w-4 h-4" /></span>
-          <span>Triage Assistant</span>
+          <span>FirstAid+</span>
         </NavLink>
 
         {/* Desktop Nav (Moved to Sidebar) */}

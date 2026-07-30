@@ -37,7 +37,7 @@ class GeminiService:
         lang = "English" if language_code == "en" else "Akan/Twi"
         
         prompt = (
-            f"You are a medical triage assistant. The user is speaking in {lang}. "
+            f"You are FirstAid+. The user is speaking in {lang}. "
             "Your task is to identify the primary symptom they are describing and map it to exactly ONE "
             "of the allowed canonical symptom slugs. If the user mentions multiple, pick the most severe/primary one. "
             f"If none match or the input is vague (like 'I feel strange'), return a helpful, empathetic follow-up question asking for more specific symptoms. Prefix this question with 'CLARIFY: '. The question MUST be in {lang}.\n\n"
@@ -132,7 +132,7 @@ class GeminiService:
         tone = "urgent and direct, advising immediate medical attention" if is_emergency else "calm, reassuring, and providing clear guidance"
         
         prompt = (
-            f"You are a helpful and professional health triage assistant. "
+            f"You are FirstAid+, a helpful and professional health assistant. "
             f"Summarize the following health assessment and provide the final recommendation to the user. "
             f"Your response must be in {lang}. Your tone should be {tone}.\n\n"
             "Important Rules:\n"

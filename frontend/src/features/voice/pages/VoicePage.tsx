@@ -236,7 +236,7 @@ export default function VoicePage() {
       } else {
         const t = appLanguage === 'tw'
           ? "Akwaaba! Mɛyɛ dɛn atumi aboa wo nnɛ? Ɔhaw bɛn na wote nka?"
-          : "Hi! I'm your Health Triage Assistant. What symptoms are you experiencing today?"
+          : "Hi! I'm FirstAid+. What symptoms are you experiencing today?"
         textToSpeak += t
         textToDisplay = t
       }

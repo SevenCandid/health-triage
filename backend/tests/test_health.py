@@ -32,4 +32,4 @@ async def test_openapi_schema_available(async_client: AsyncClient) -> None:
     response = await async_client.get("/openapi.json")
     assert response.status_code == 200
     schema = response.json()
-    assert schema["info"]["title"] == "Health Triage Assistant API"
+    assert schema["info"]["title"] == "FirstAid+ API"

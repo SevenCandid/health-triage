@@ -1,4 +1,4 @@
-// Global shared TypeScript types for the Health Triage Assistant frontend.
+// Global shared TypeScript types for the FirstAid+ frontend.
 
 // Backend uses RED/ORANGE/YELLOW/GREEN; frontend legacy used EMERGENCY/HIGH/MEDIUM/LOW
 export type UrgencyLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'EMERGENCY' | 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'

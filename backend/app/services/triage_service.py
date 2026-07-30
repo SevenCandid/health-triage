@@ -461,7 +461,7 @@ class TriageService:
         messages = []
         messages.append({
             "role": "SYSTEM",
-            "content": "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?"
+            "content": "Hi! I'm FirstAid+. What symptoms are you experiencing today?"
         })
 
         if conv.symptoms:

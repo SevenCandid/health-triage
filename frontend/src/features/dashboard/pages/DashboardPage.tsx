@@ -199,7 +199,7 @@ export default function DashboardPage() {
             <span className="text-2xl bg-white/10 h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform mb-3"><Stethoscope className="w-4 h-4" /></span>
             <div>
               <h2 className="text-sm font-bold leading-tight">Start Health Assessment</h2>
-              <p className="text-[11px] text-primary-foreground/80 mt-0.5 leading-snug">Interactive symptom triage assistant</p>
+              <p className="text-[11px] text-primary-foreground/80 mt-0.5 leading-snug">Interactive symptom FirstAid+</p>
             </div>
           </button>
         </FadeIn>

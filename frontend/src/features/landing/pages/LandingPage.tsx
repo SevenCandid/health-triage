@@ -73,7 +73,7 @@ export default function LandingPage() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 font-bold text-foreground">
             <span className="text-2xl"><HeartPulse className="w-4 h-4" /></span>
-            <span>Triage Assistant</span>
+            <span>FirstAid+</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate('/login')}>Sign In</Button>
@@ -168,7 +168,7 @@ export default function LandingPage() {
                   <Stethoscope className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-foreground">Welcome to Health Triage</h2>
+                  <h2 className="text-base font-bold text-foreground">Welcome to FirstAid+</h2>
                   <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     Choose how you would like to proceed with your health assessment.
                   </p>

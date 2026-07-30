@@ -14,8 +14,8 @@ export function AuthLayout() {
       <div className="w-full flex flex-col items-center my-auto py-2 sm:py-6">
         <div className="mb-4 flex flex-col items-center gap-1">
           <span className="text-3xl"><HeartPulse className="w-4 h-4" /></span>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Health Triage</h1>
-          <p className="text-xs text-muted-foreground text-center">Offline-first clinical triage assistant</p>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">FirstAid+</h1>
+          <p className="text-xs text-muted-foreground text-center">Offline-first clinical assistant</p>
         </div>
         <div className="w-full max-w-md">
           <Outlet />

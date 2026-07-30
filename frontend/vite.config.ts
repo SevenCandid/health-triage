@@ -16,9 +16,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
       },
       manifest: {
-        name: 'Health Triage Assistant',
-        short_name: 'Health Triage',
-        description: 'Offline-first health triage evaluation system',
+        name: 'FirstAid+',
+        short_name: 'FirstAid+',
+        description: 'Offline-first FirstAid+ evaluation system',
         theme_color: '#DC2626',
         background_color: '#ffffff',
         display: 'standalone',

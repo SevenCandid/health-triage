@@ -18,7 +18,7 @@ class Settings(BaseSettings):
         case_sensitive=True,
     )
 
-    PROJECT_NAME: str = "Health Triage Assistant API"
+    PROJECT_NAME: str = "FirstAid+ API"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"
     DEBUG: bool = False

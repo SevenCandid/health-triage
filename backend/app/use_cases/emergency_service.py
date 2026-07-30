@@ -49,7 +49,7 @@ class EmergencyService:
             f"EMERGENCY HEALTH ALERT! "
             f"Symptom: {primary_symptom.upper()}. "
             f"GPS Location: {maps_url}. "
-            f"Please assist immediately. Sent via Health Triage Assistant."
+            f"Please assist immediately. Sent via FirstAid+."
         )
         logger.warning(
             f"Emergency dispatched: log_id={log.id} "

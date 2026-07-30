@@ -19,7 +19,7 @@ export function InstallNotice() {
             <div className="flex items-center gap-3">
               <span className="text-xl"><HeartPulse className="w-4 h-4" /></span>
               <div>
-                <p className="text-sm font-semibold text-primary">Install Triage Assistant</p>
+                <p className="text-sm font-semibold text-primary">Install FirstAid+</p>
                 <p className="text-xs text-muted-foreground hidden sm:block">
                   Add to your home screen for quick offline access and a better experience.
                 </p>

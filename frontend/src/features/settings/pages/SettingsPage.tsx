@@ -153,7 +153,7 @@ function VoiceSettings() {
 
   const testVoice = () => {
     window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance("Hi! I'm your Health Triage Assistant.")
+    const u = new SpeechSynthesisUtterance("Hi! I'm FirstAid+.")
     u.rate = voiceRate
     u.pitch = voicePitch
     u.volume = voiceVolume
@@ -303,7 +303,7 @@ export default function SettingsPage() {
 
       {/* About */}
       <SettingsSection icon=<Info className="w-4 h-4" /> title="About">
-        <SettingsRow label="App Version" description="Health Triage Assistant">
+        <SettingsRow label="App Version" description="FirstAid+">
           <span className="text-sm text-muted-foreground">v1.0.0</span>
         </SettingsRow>
         <SettingsRow label="Backend Status" description="API server connectivity">

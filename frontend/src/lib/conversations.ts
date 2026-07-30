@@ -1,7 +1,7 @@
 export const CONVERSATION_PROMPTS = {
   greetings: {
     en: [
-      "Hi! I'm your Triage Assistant. What symptoms are you experiencing today?",
+      "Hi! I'm FirstAid+. What symptoms are you experiencing today?",
       "Hello. I'm here to help. How are you feeling today?",
       "Hi there. I'm your health companion. What's bothering you today?",
       "Welcome back. How can I help you today?"
