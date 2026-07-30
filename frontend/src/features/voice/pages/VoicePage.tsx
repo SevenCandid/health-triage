@@ -525,24 +525,30 @@ export default function VoicePage() {
     // Check for confirmations to "I think I have enough information..."
     if (isConfirmingCompletion) {
         setIsConfirmingCompletion(false)
-        const noIntents = ['no', 'nope', 'nothing', 'thats all', 'no more', 'none', 'nah', "no i dont", "no i am not", "i dont think so", "nothing else", "its okay", "thats enough", "im good"]
-        const pureYesIntents = ['yes', 'yeah', 'yep', 'yup', 'i do', 'sure', 'yes i do']
-        
         const cleanResponse = lowerText.replace(/[']/g, '')
         
-        if (noIntents.some(no => cleanResponse === no || cleanResponse.startsWith(no))) {
+        const noConfirmRegex = /\b(no|nope|nah|none|nothing|thats all|no more|its okay|thats okay|thats fine|im good|im fine|thats enough|i dont think so)\b/i
+        const yesConfirmRegex = /\b(yes|yeah|yep|yup|sure|i do)\b/i
+        
+        if (noConfirmRegex.test(cleanResponse) || cleanResponse.includes('i said no')) {
             handleCompletion()
             return
         }
         
-        if (pureYesIntents.some(yes => cleanResponse === yes)) {
+        if (yesConfirmRegex.test(cleanResponse)) {
             setCurrentQuestion(null)
             speakText("Okay, please tell me what else you're experiencing.", () => startListening())
             return
         }
 
-        // If they said something else (e.g. "Yes, I also have a headache" or just "My head hurts"),
-        // treat it as the new symptom to evaluate and fall through to symptomsMutation.
+        // If it's not a clear yes/no, maybe they just spoke the symptom directly (e.g. "my head hurts")
+        // If it looks like a negative but wasn't caught, let's play it safe and end
+        if (cleanResponse.length < 15 && cleanResponse.includes('no')) {
+            handleCompletion()
+            return
+        }
+
+        // Fall through to symptomsMutation
         setCurrentQuestion(null)
     }
 
