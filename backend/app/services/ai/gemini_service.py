@@ -122,7 +122,7 @@ class GeminiService:
                     logger.error(f"Fallback to gemini-flash-latest also failed: {fallback_e}")
             return question_en
 
-    def generate_explanation(self, conversation_context: str, recommendation_summary: str, is_emergency: bool, language_code: str) -> str:
+    def generate_explanation(self, conversation_context: str, recommendation_summary: str, is_emergency: bool, language_code: str, profile_context: str | None = None) -> str:
         """Generates a natural, reassuring explanation of the assessment results."""
         if not self.is_available:
             # Fallback to the rule engine's raw recommendation
@@ -138,7 +138,18 @@ class GeminiService:
             "Important Rules:\n"
             "1. Do NOT make a medical diagnosis. Say 'Based on what you've shared...' rather than 'You have...'\n"
             "2. Convey the recommendation clearly.\n"
-            "3. Keep it concise (3-4 sentences max).\n\n"
+            "3. Keep it concise (3-4 sentences max).\n"
+        )
+
+        if profile_context:
+            prompt += "4. Consider the user's personal health profile (age, sex, allergies, conditions) provided below. If they have specific allergies or chronic conditions relevant to their symptoms or recommended actions, briefly mention them as special precautions.\n\n"
+        else:
+            prompt += "\n"
+
+        if profile_context:
+            prompt += f"Patient Profile Context:\n{profile_context}\n\n"
+
+        prompt += (
             f"Conversation Context:\n{conversation_context}\n\n"
             f"Rule Engine Recommendation:\n{recommendation_summary}"
         )

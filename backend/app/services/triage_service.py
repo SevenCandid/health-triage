@@ -21,7 +21,7 @@ from app.models.question import QuestionModel
 from app.models.triage_rule import TriageRuleModel
 from app.models.recommendation import RecommendationModel
 from app.models.severity_level import SeverityLevelModel
-from app.infrastructure.database.models import RuleTreeModel
+from app.infrastructure.database.models import RuleTreeModel, HealthProfileModel
 
 from app.engine.rule_engine import RuleEngine, TriageEvaluationResult
 
@@ -225,11 +225,28 @@ class TriageService:
                 if answers_text:
                     transcript += f" | Answers: {', '.join(answers_text)}"
                     
+                profile_context = None
+                if conv.user_id:
+                    profile_res = await self.session.execute(
+                        select(HealthProfileModel).where(HealthProfileModel.user_id == conv.user_id)
+                    )
+                    profile = profile_res.scalar_one_or_none()
+                    if profile:
+                        parts = []
+                        if profile.age: parts.append(f"Age: {profile.age}")
+                        if profile.biological_sex: parts.append(f"Sex: {profile.biological_sex}")
+                        if profile.blood_group: parts.append(f"Blood Group: {profile.blood_group}")
+                        if profile.chronic_conditions: parts.append(f"Chronic Conditions: {', '.join(profile.chronic_conditions)}")
+                        if profile.known_allergies: parts.append(f"Allergies: {', '.join(profile.known_allergies)}")
+                        if parts:
+                            profile_context = " | ".join(parts)
+                            
                 explanation = self.gemini_service.generate_explanation(
                     conversation_context=transcript,
                     recommendation_summary=eval_result.explanation,
                     is_emergency=eval_result.is_emergency,
-                    language_code=conv.language_code
+                    language_code=conv.language_code,
+                    profile_context=profile_context
                 )
                 conv.ai_explanation = explanation
                 self.session.add(conv)
