@@ -533,7 +533,15 @@ export default function VoicePage() {
     } else {
       // Answering a follow-up question
       const nodeId = currentQ.node_id
-      answerMutation.mutate({ sid, answerText: text, nodeId })
+      const options = currentQ.options || []
+      let answerValue = options.length > 0 ? options[0].option_value : ''
+      const lowerText = text.toLowerCase()
+      if (lowerText.includes('yes') || lowerText.includes('yep') || lowerText.includes('yeah') || lowerText.includes('ane') || lowerText.includes('aane') || lowerText.includes('yoo')) {
+         answerValue = options.find(o => o.option_value === 'yes')?.option_value || (options.length > 0 ? options[0].option_value : '')
+      } else if (lowerText.includes('no') || lowerText.includes('nope') || lowerText.includes('nah') || lowerText.includes('daabi')) {
+         answerValue = options.find(o => o.option_value === 'no')?.option_value || (options.length > 1 ? options[1].option_value : (options.length > 0 ? options[0].option_value : ''))
+      }
+      answerMutation.mutate({ sid, answerValue, answerRawText: text, nodeId })
     }
   }
 
