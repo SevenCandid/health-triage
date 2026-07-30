@@ -219,9 +219,15 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # CORS Middleware — Allow React PWA frontend origins
 # ---------------------------------------------------------------------------
+cors_origins = list(set(settings.CORS_ORIGINS + [
+    "https://firstaidplus.vercel.app",
+    "https://health-triagee.vercel.app",
+    "https://health-triage.vercel.app"
+]))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept", "X-Request-ID"],
