@@ -83,7 +83,7 @@ export function LoadingSpinner({
 export function PageLoader() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <LoadingSpinner size="lg" label="Loading page..." />
+      <LoadingSpinner size="lg" label="Preparing assessment..." />
     </div>
   )
 }
