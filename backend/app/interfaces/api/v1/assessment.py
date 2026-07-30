@@ -85,6 +85,9 @@ async def start_assessment(
 
 from app.services.symptom_understanding.symptom_normalizer import SymptomNormalizer
 
+from app.services.ai.gemini_service import GeminiService
+from app.interfaces.api.dependencies import get_gemini_service
+
 @router.post(
     "/symptoms",
     response_model=AssessmentSymptomsResponse,
@@ -94,12 +97,17 @@ from app.services.symptom_understanding.symptom_normalizer import SymptomNormali
 async def set_symptoms(
     payload: AssessmentSymptomsRequest,
     service: Annotated[TriageService, Depends(get_triage_service)],
+    gemini_service: Annotated[GeminiService, Depends(get_gemini_service)],
 ) -> AssessmentSymptomsResponse:
     """Associates a primary symptom with the assessment session and evaluates initial question or red flag."""
     try:
         normalizer = SymptomNormalizer()
         input_text = payload.user_text or payload.symptom_slug
-        normalized_slug = normalizer.normalize(input_text) or payload.symptom_slug
+        
+        # Determine language for extraction
+        sess, _ = await service.get_progress(payload.session_id)
+        
+        normalized_slug = normalizer.normalize_with_ai(input_text, sess.language_code, gemini_service) or payload.symptom_slug
         sess, sym, eval_result = await service.add_symptom(
             conversation_id=payload.session_id,
             symptom_slug=normalized_slug,
@@ -112,11 +120,19 @@ async def set_symptoms(
         nq = eval_result.next_question
         ans_count = len(sess.raw_answers_snapshot) if sess.raw_answers_snapshot else 0
         prefix = get_conversational_prefix(ans_count)
+        
+        question_text_en = prefix + nq["question_text_en"]
+        question_text_tw = nq.get("question_text_tw")
+        
+        # Translate if Twi is requested and we have gemini available
+        if sess.language_code == "tw" and gemini_service.is_available:
+            question_text_tw = gemini_service.translate_question(question_text_en, sess.language_code)
+
         next_q_dto = NextQuestionDTO(
             id=nq["id"],
             node_id=nq["node_id"],
-            question_text_en=prefix + nq["question_text_en"],
-            question_text_tw=nq.get("question_text_tw"),
+            question_text_en=question_text_en,
+            question_text_tw=question_text_tw,
             question_type=nq["question_type"],
             options=[QuestionOptionDTO(**opt) for opt in nq.get("options", [])],
         )
@@ -139,6 +155,7 @@ async def set_symptoms(
 async def submit_answer(
     payload: AssessmentAnswerRequest,
     service: Annotated[TriageService, Depends(get_triage_service)],
+    gemini_service: Annotated[GeminiService, Depends(get_gemini_service)],
 ) -> AssessmentAnswerResponse:
     """Submits a single question node answer and advances assessment progress."""
     try:
@@ -156,11 +173,19 @@ async def submit_answer(
         nq = eval_result.next_question
         ans_count = len(sess.raw_answers_snapshot) if sess.raw_answers_snapshot else 0
         prefix = get_conversational_prefix(ans_count)
+        
+        question_text_en = prefix + nq["question_text_en"]
+        question_text_tw = nq.get("question_text_tw")
+        
+        # Translate if Twi is requested and we have gemini available
+        if sess.language_code == "tw" and gemini_service.is_available:
+            question_text_tw = gemini_service.translate_question(question_text_en, sess.language_code)
+
         next_q_dto = NextQuestionDTO(
             id=nq["id"],
             node_id=nq["node_id"],
-            question_text_en=prefix + nq["question_text_en"],
-            question_text_tw=nq.get("question_text_tw"),
+            question_text_en=question_text_en,
+            question_text_tw=question_text_tw,
             question_type=nq["question_type"],
             options=[QuestionOptionDTO(**opt) for opt in nq.get("options", [])],
         )

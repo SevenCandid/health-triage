@@ -174,7 +174,7 @@ export default function VoicePage() {
     let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
     
     if (appLanguage === 'tw') {
-      const twiVoice = voices.find(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+      const twiVoice = voices.find(v => v.lang.toLowerCase().startsWith('tw') || v.lang.toLowerCase().startsWith('ak'))
       if (twiVoice) {
         selectedVoice = twiVoice
       }
@@ -200,7 +200,7 @@ export default function VoicePage() {
      let selectedVoice = preferredVoiceURI ? voices.find(v => v.voiceURI === preferredVoiceURI) : null
      
      if (appLanguage === 'tw') {
-       const twiVoice = voices.find(v => v.lang.toLowerCase().includes('tw') || v.lang.toLowerCase().includes('ak'))
+       const twiVoice = voices.find(v => v.lang.toLowerCase().startsWith('tw') || v.lang.toLowerCase().startsWith('ak'))
        if (twiVoice) {
          selectedVoice = twiVoice
        }

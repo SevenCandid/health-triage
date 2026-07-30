@@ -74,27 +74,30 @@ def get_auth_service(
     return AuthService(user_repo=user_repo)
 
 
-def get_triage_service(db: DbSession) -> TriageService:
-    return TriageService(db_session=db)
+from app.services.ai.gemini_service import GeminiService
+from functools import lru_cache
 
+@lru_cache()
+def get_gemini_service() -> GeminiService:
+    return GeminiService()
+
+def get_triage_service(db: DbSession, gemini_service: GeminiService = Depends(get_gemini_service)) -> TriageService:
+    return TriageService(db_session=db, gemini_service=gemini_service)
 
 def get_profile_service(
     profile_repo: SqlAlchemyHealthProfileRepository = Depends(get_health_profile_repo),
 ) -> ProfileService:
     return ProfileService(profile_repo=profile_repo)
 
-
 def get_emergency_service(
     emergency_repo: SqlAlchemyEmergencyLogRepository = Depends(get_emergency_log_repo),
 ) -> EmergencyService:
     return EmergencyService(emergency_repo=emergency_repo)
 
-
 def get_sync_service(
     triage_repo: SqlAlchemyTriageSessionRepository = Depends(get_triage_session_repo),
 ) -> SyncService:
     return SyncService(triage_repo=triage_repo)
-
 
 def get_analytics_service() -> AnalyticsService:
     return AnalyticsService()

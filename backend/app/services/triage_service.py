@@ -31,9 +31,10 @@ logger = logging.getLogger(__name__)
 class TriageService:
     """Service layer that manages assessment session lifecycles and invokes RuleEngine."""
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: AsyncSession, gemini_service=None) -> None:
         self.session = db_session
         self.engine = RuleEngine()
+        self.gemini_service = gemini_service
 
     async def start_conversation(
         self,
@@ -211,6 +212,33 @@ class TriageService:
             raise ValueError(f"Health conversation '{conversation_id}' not found.")
 
         eval_result = await self.evaluate_conversation(conversation_id, None)
+        
+        # If the assessment is completed, generate an AI summary
+        if eval_result.next_question is None and self.gemini_service:
+            if not conv.ai_explanation:
+                # Need to generate and save it
+                transcript = f"Symptoms evaluated: {', '.join([cs.symptom.name for cs in conv.symptoms])}"
+                # Add a brief representation of answers
+                answers_text = []
+                for k, v in (conv.raw_answers_snapshot or {}).items():
+                    answers_text.append(f"{k}: {v}")
+                if answers_text:
+                    transcript += f" | Answers: {', '.join(answers_text)}"
+                    
+                explanation = self.gemini_service.generate_explanation(
+                    conversation_context=transcript,
+                    recommendation_summary=eval_result.explanation,
+                    is_emergency=eval_result.is_emergency,
+                    language_code=conv.language_code
+                )
+                conv.ai_explanation = explanation
+                self.session.add(conv)
+                await self.session.flush()
+                await self.session.commit()
+            
+            # Override the rule engine explanation with the AI one
+            eval_result.explanation = conv.ai_explanation
+
         return conv, eval_result
 
     async def restart_conversation(self, conversation_id: str) -> HealthConversationModel:

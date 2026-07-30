@@ -64,3 +64,16 @@ class SymptomNormalizer:
                     best_slug = slug
 
         return best_slug
+
+    def normalize_with_ai(self, user_text: str, language_code: str, gemini_service) -> Optional[str]:
+        """Attempts to normalize using AI, then falls back to fuzzy matching."""
+        if not user_text.strip():
+            return None
+            
+        allowed_slugs = list(self.dictionary.keys())
+        ai_slug = gemini_service.extract_symptom(user_text, allowed_slugs, language_code)
+        
+        if ai_slug and ai_slug in allowed_slugs:
+            return ai_slug
+            
+        return self.normalize(user_text)
