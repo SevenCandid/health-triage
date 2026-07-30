@@ -64,11 +64,11 @@ class GeminiService:
             return None, None
         except Exception as e:
             logger.warning(f"Gemini extract_symptom error with {model_name}: {e}")
-            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
-                logger.info("Attempting fallback to gemini-1.5-flash...")
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-flash-latest":
+                logger.info("Attempting fallback to gemini-flash-latest...")
                 try:
                     response = self.client.models.generate_content(
-                        model="gemini-1.5-flash",
+                        model="gemini-flash-latest",
                         contents=prompt,
                         config=types.GenerateContentConfig(temperature=0.1)
                     )
@@ -80,7 +80,7 @@ class GeminiService:
                         return None, raw_result[len("CLARIFY:"):].strip()
                     return None, None
                 except Exception as fallback_e:
-                    logger.error(f"Fallback to gemini-1.5-flash also failed: {fallback_e}")
+                    logger.error(f"Fallback to gemini-flash-latest also failed: {fallback_e}")
             return None, None
 
     def translate_question(self, question_en: str, language_code: str) -> str:
@@ -109,16 +109,16 @@ class GeminiService:
             return response.text.strip()
         except Exception as e:
             logger.warning(f"Gemini translate_question error with {model_name}: {e}")
-            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-flash-latest":
                 try:
                     response = self.client.models.generate_content(
-                        model="gemini-1.5-flash",
+                        model="gemini-flash-latest",
                         contents=prompt,
                         config=types.GenerateContentConfig(temperature=0.1)
                     )
                     return response.text.strip()
                 except Exception as fallback_e:
-                    logger.error(f"Fallback to gemini-1.5-flash also failed: {fallback_e}")
+                    logger.error(f"Fallback to gemini-flash-latest also failed: {fallback_e}")
             return question_en
 
     def generate_explanation(self, conversation_context: str, recommendation_summary: str, is_emergency: bool, language_code: str) -> str:
@@ -155,14 +155,14 @@ class GeminiService:
             return response.text.strip()
         except Exception as e:
             logger.warning(f"Gemini generate_explanation error with {model_name}: {e}")
-            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
+            if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-flash-latest":
                 try:
                     response = self.client.models.generate_content(
-                        model="gemini-1.5-flash",
+                        model="gemini-flash-latest",
                         contents=prompt,
                         config=types.GenerateContentConfig(temperature=0.3)
                     )
                     return response.text.strip()
                 except Exception as fallback_e:
-                    logger.error(f"Fallback to gemini-1.5-flash also failed: {fallback_e}")
+                    logger.error(f"Fallback to gemini-flash-latest also failed: {fallback_e}")
             return recommendation_summary
