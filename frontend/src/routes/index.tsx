@@ -16,6 +16,7 @@ const AssessmentPage       = lazy(() => import('@/features/assessment/pages/Asse
 const AssessmentResultPage = lazy(() => import('@/features/assessment/pages/AssessmentResultPage'))
 const HistoryPage          = lazy(() => import('@/features/history/pages/HistoryPage'))
 const EmergencyPage        = lazy(() => import('@/features/emergency/pages/EmergencyPage'))
+const HospitalMapPage      = lazy(() => import('@/features/emergency/pages/HospitalMapPage'))
 const ProfilePage          = lazy(() => import('@/features/profile/pages/ProfilePage'))
 const SettingsPage         = lazy(() => import('@/features/settings/pages/SettingsPage'))
 const VoicePage            = lazy(() => import('@/features/voice/pages/VoicePage'))
@@ -116,6 +117,10 @@ export const router = createBrowserRouter([
       {
         path: '/emergency',
         element: <Page><EmergencyPage /></Page>,
+      },
+      {
+        path: '/hospitals',
+        element: <Page><HospitalMapPage /></Page>,
       },
       {
         path: '/profile',

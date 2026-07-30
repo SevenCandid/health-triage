@@ -437,7 +437,7 @@ export default function AssessmentResultPage() {
             )}
 
             <button
-              onClick={() => window.open('https://www.google.com/maps/search/hospital+near+me', '_blank')}
+              onClick={() => navigate('/hospitals')}
               className="w-full flex items-center justify-center gap-2 border border-border bg-background hover:bg-accent text-foreground font-semibold text-xs rounded-xl py-2.5 transition-all mt-2"
             >
               <span><Hospital className="w-4 h-4" /></span> Find Nearby Hospital
