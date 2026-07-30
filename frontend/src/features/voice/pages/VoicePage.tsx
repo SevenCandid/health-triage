@@ -506,9 +506,13 @@ export default function VoicePage() {
     const lowerText = text.toLowerCase().replace(/[^\w\s]/g, '').trim()
     
     if (completed) {
-        if (lowerText === 'no' || lowerText === 'nope' || lowerText.includes('nothing')) {
+        const cleanResponse = lowerText.replace(/[']/g, '')
+        const noRegex = /\b(no|nope|nothing|nah|none|thats all|no more)\b/i
+        const yesRegex = /\b(yes|yeah|yep|yup|sure|more)\b/i
+        
+        if (noRegex.test(cleanResponse) || cleanResponse.includes('no thank') || cleanResponse.includes('im good')) {
             handleEndTriage()
-        } else if (lowerText === 'yes' || lowerText.includes('yes') || lowerText.includes('more')) {
+        } else if (yesRegex.test(cleanResponse)) {
             // Start a new session seamlessly
             resetSession()
             startMutation.mutate()
@@ -630,7 +634,7 @@ export default function VoicePage() {
       </div>
 
       {/* Controls */}
-      <div className="flex gap-2 sm:gap-4 flex-shrink-0 mt-auto w-full justify-center pb-2">
+      <div className="flex gap-2 sm:gap-4 flex-shrink-0 mt-auto w-full justify-center pb-20 sm:pb-24">
         {voiceState === 'IDLE' ? (
           <Button className="rounded-full h-9 sm:h-12 px-4 sm:px-6 text-xs sm:text-base whitespace-nowrap shadow-sm" onClick={startListening}>
             Tap to Speak
