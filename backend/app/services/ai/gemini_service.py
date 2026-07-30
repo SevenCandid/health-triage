@@ -29,10 +29,10 @@ class GeminiService:
         else:
             logger.warning("GeminiService initialized in mock/fallback mode. Invalid or missing API key.")
 
-    def extract_symptom(self, text: str, allowed_slugs: List[str], language_code: str = "en") -> Optional[str]:
-        """Extracts a canonical symptom slug from free-form user text."""
+    def extract_symptom(self, text: str, allowed_slugs: List[str], language_code: str = "en") -> tuple[Optional[str], Optional[str]]:
+        """Extracts a canonical symptom slug, or returns a clarifying question if unclear."""
         if not self.is_available:
-            return None
+            return None, None
             
         lang = "English" if language_code == "en" else "Akan/Twi"
         
@@ -40,10 +40,10 @@ class GeminiService:
             f"You are a medical triage assistant. The user is speaking in {lang}. "
             "Your task is to identify the primary symptom they are describing and map it to exactly ONE "
             "of the allowed canonical symptom slugs. If the user mentions multiple, pick the most severe/primary one. "
-            "If none match or it's unclear, return 'unclear'.\n\n"
+            f"If none match or the input is vague (like 'I feel strange'), return a helpful, empathetic follow-up question asking for more specific symptoms. Prefix this question with 'CLARIFY: '. The question MUST be in {lang}.\n\n"
             f"Allowed slugs: {json.dumps(allowed_slugs)}\n\n"
             f"User text: \"{text}\"\n\n"
-            "Return ONLY the exact slug string or 'unclear'."
+            "Return ONLY the exact slug string OR 'CLARIFY: your question'."
         )
         
         model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
@@ -52,12 +52,16 @@ class GeminiService:
             response = self.client.models.generate_content(
                 model=model_name,
                 contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.1,
-                )
+                config=types.GenerateContentConfig(temperature=0.1)
             )
-            result = response.text.strip().lower()
-            return result if result in allowed_slugs else None
+            raw_result = response.text.strip()
+            result = raw_result.lower()
+            if result in allowed_slugs:
+                return result, None
+            if result.startswith("clarify:"):
+                # Strip the prefix, ignoring case
+                return None, raw_result[len("CLARIFY:"):].strip()
+            return None, None
         except Exception as e:
             logger.warning(f"Gemini extract_symptom error with {model_name}: {e}")
             if ("429" in str(e) or "404" in str(e)) and model_name != "gemini-1.5-flash":
@@ -68,11 +72,16 @@ class GeminiService:
                         contents=prompt,
                         config=types.GenerateContentConfig(temperature=0.1)
                     )
-                    result = response.text.strip().lower()
-                    return result if result in allowed_slugs else None
+                    raw_result = response.text.strip()
+                    result = raw_result.lower()
+                    if result in allowed_slugs:
+                        return result, None
+                    if result.startswith("clarify:"):
+                        return None, raw_result[len("CLARIFY:"):].strip()
+                    return None, None
                 except Exception as fallback_e:
                     logger.error(f"Fallback to gemini-1.5-flash also failed: {fallback_e}")
-            return None
+            return None, None
 
     def translate_question(self, question_en: str, language_code: str) -> str:
         """Translates a follow-up question to the target language if necessary."""
