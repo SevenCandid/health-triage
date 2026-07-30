@@ -82,7 +82,10 @@ async def get_knowledge_sync(
         .options(selectinload(TriageRuleModel.severity_level))
     )).scalars().all()
     
-    recommendations = (await db.execute(select(RecommendationModel))).scalars().all()
+    recommendations = (await db.execute(
+        select(RecommendationModel)
+        .options(selectinload(RecommendationModel.translations))
+    )).scalars().all()
 
     # 2. Serialize to dictionaries
     def serialize_model(instance):
@@ -120,7 +123,14 @@ async def get_knowledge_sync(
             r_dict["severity_code"] = r.severity_level.code.value
         rules_list.append(r_dict)
         
-    recommendations_list = [serialize_model(r) for r in recommendations]
+    recommendations_list = []
+    for r in recommendations:
+        r_dict = serialize_model(r)
+        if hasattr(r, 'translations') and r.translations:
+            r_dict['translations'] = [serialize_model(t) for t in r.translations]
+        else:
+            r_dict['translations'] = []
+        recommendations_list.append(r_dict)
 
     # 3. Generate a version hash based on the content (including updated_at timestamps to detect changes)
     def _extract_versions(entities_list):

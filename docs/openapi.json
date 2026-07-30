@@ -76,7 +76,7 @@
           "Authentication"
         ],
         "summary": "Authenticate and receive JWT token",
-        "description": "Validates phone number and password credentials. Returns a JWT access token on successful authentication.",
+        "description": "Validates email or phone number and password credentials. Returns a JWT access and refresh token pair on successful authentication.",
         "operationId": "login_api_v1_auth_login_post",
         "requestBody": {
           "content": {
@@ -110,6 +110,100 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh JWT tokens",
+        "description": "Issues a new token pair using a valid refresh token.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Logout user",
+        "description": "Logs out the user. Clients should discard tokens.",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get current user details",
+        "description": "Returns the currently authenticated user's details.",
+        "operationId": "get_me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/assessment/start": {
@@ -227,6 +321,63 @@
                 "schema": {
                   "$ref": "#/components/schemas/AssessmentAnswerResponse"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assessment/history": {
+      "get": {
+        "tags": [
+          "Assessment API"
+        ],
+        "summary": "Get assessment history",
+        "description": "Retrieves paginated triage session history for the current user.",
+        "operationId": "get_assessment_history_api_v1_assessment_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -371,32 +522,31 @@
         }
       }
     },
-    "/api/v1/triage/evaluate": {
+    "/api/v1/assessment/{session_id}/resolve": {
       "post": {
         "tags": [
-          "Triage"
+          "Assessment API"
         ],
-        "summary": "Evaluate symptoms against clinical decision tree",
-        "description": "Passes patient symptom inputs through the deterministic clinical rule engine. Returns urgency level (RED/ORANGE/YELLOW/GREEN), primary action, and timeframe. Authentication is optional \u2014 anonymous triage is permitted. See /docs/RuleEngineDesign.md for full decision tree specification.",
-        "operationId": "evaluate_triage_api_v1_triage_evaluate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/TriageEvaluateRequest"
-              }
+        "summary": "Resolve a past assessment session",
+        "description": "Archives the session so it is no longer considered active/pending.",
+        "operationId": "resolve_assessment_api_v1_assessment__session_id__resolve_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
             }
-          },
-          "required": true
-        },
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TriageEvaluateResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -410,71 +560,25 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v1/triage/rules/latest": {
-      "get": {
-        "tags": [
-          "Triage"
-        ],
-        "summary": "Fetch the latest active clinical rule tree",
-        "description": "Returns the full JSON decision tree structure for the currently active rule tree version. Used by the client-side offline rule engine to update its local cache. No authentication required \u2014 the rule tree is public data.",
-        "operationId": "get_latest_rule_tree_api_v1_triage_rules_latest_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleTreeResponse"
-                }
-              }
-            }
-          }
         }
       }
     },
-    "/api/v1/triage/history": {
+    "/api/v1/assessment/{session_id}/conversation": {
       "get": {
         "tags": [
-          "Triage"
+          "Assessment API"
         ],
-        "summary": "Get authenticated user triage history",
-        "description": "Returns a paginated list of past triage sessions for the authenticated user.",
-        "operationId": "get_triage_history_api_v1_triage_history_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
+        "summary": "Get conversation transcript",
+        "description": "Retrieves full text transcript of the conversation session.",
+        "operationId": "get_conversation_transcript_api_v1_assessment__session_id__conversation_get",
         "parameters": [
           {
-            "name": "limit",
-            "in": "query",
-            "required": false,
+            "name": "session_id",
+            "in": "path",
+            "required": true,
             "schema": {
-              "type": "integer",
-              "maximum": 100,
-              "minimum": 1,
-              "default": 20,
-              "title": "Limit"
-            }
-          },
-          {
-            "name": "offset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "default": 0,
-              "title": "Offset"
+              "type": "string",
+              "title": "Session Id"
             }
           }
         ],
@@ -483,9 +587,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TriageHistoryResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -744,6 +846,28 @@
         ]
       }
     },
+    "/api/v1/sync/knowledge": {
+      "get": {
+        "tags": [
+          "Sync"
+        ],
+        "summary": "Download the complete triage knowledge base for offline use.",
+        "description": "Returns all active Symptoms, Questions, Rules, and Recommendations.",
+        "operationId": "get_knowledge_sync_api_v1_sync_knowledge_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSyncResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/consultation/stream": {
       "post": {
         "tags": [
@@ -904,7 +1028,7 @@
             "title": "Session Id"
           },
           "status": {
-            "$ref": "#/components/schemas/SessionStatus"
+            "$ref": "#/components/schemas/ConversationStatus"
           },
           "symptom_id": {
             "anyOf": [
@@ -963,7 +1087,7 @@
             "title": "New Session Id"
           },
           "status": {
-            "$ref": "#/components/schemas/SessionStatus"
+            "$ref": "#/components/schemas/ConversationStatus"
           },
           "message": {
             "type": "string",
@@ -1007,6 +1131,31 @@
             "type": "string",
             "format": "date-time",
             "title": "Conducted At"
+          },
+          "symptom_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symptom Name"
+          },
+          "raw_answers": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Answers"
           }
         },
         "type": "object",
@@ -1050,7 +1199,7 @@
             "title": "Session Id"
           },
           "status": {
-            "$ref": "#/components/schemas/SessionStatus"
+            "$ref": "#/components/schemas/ConversationStatus"
           },
           "language_code": {
             "type": "string",
@@ -1063,6 +1212,39 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "pending_symptom": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Symptom"
+          },
+          "pending_symptom_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Symptom Slug"
+          },
+          "pending_session_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Session Id"
           }
         },
         "type": "object",
@@ -1087,6 +1269,17 @@
             "maxLength": 80,
             "minLength": 1,
             "title": "Symptom Slug"
+          },
+          "user_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Text"
           }
         },
         "type": "object",
@@ -1150,6 +1343,19 @@
         ],
         "title": "ConsultationMode",
         "description": "How the user interacted with the triage flow."
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "IN_PROGRESS",
+          "ACTIVE",
+          "COMPLETED",
+          "ABANDONED",
+          "ARCHIVED",
+          "SYNCED"
+        ],
+        "title": "ConversationStatus",
+        "description": "Lifecycle status of a health conversation."
       },
       "EmergencyContactRequest": {
         "properties": {
@@ -1512,32 +1718,64 @@
         "title": "HealthProfileResponse",
         "description": "Health profile read response payload."
       },
-      "LocalizedText": {
+      "KnowledgeSyncResponse": {
         "properties": {
-          "en": {
+          "rule_set_version": {
             "type": "string",
-            "title": "En"
+            "title": "Rule Set Version"
           },
-          "tw": {
-            "type": "string",
-            "title": "Tw"
+          "symptoms": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Symptoms"
+          },
+          "questions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Questions"
+          },
+          "triage_rules": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Triage Rules"
+          },
+          "recommendations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Recommendations"
           }
         },
         "type": "object",
         "required": [
-          "en",
-          "tw"
+          "rule_set_version",
+          "symptoms",
+          "questions",
+          "triage_rules",
+          "recommendations"
         ],
-        "title": "LocalizedText",
-        "description": "Bilingual text field carrying English and Twi variants."
+        "title": "KnowledgeSyncResponse",
+        "description": "Full database export of medical knowledge for offline triage."
       },
       "LoginRequest": {
         "properties": {
-          "phone_number": {
+          "identifier": {
             "type": "string",
-            "maxLength": 20,
-            "minLength": 7,
-            "title": "Phone Number"
+            "maxLength": 255,
+            "minLength": 5,
+            "title": "Identifier",
+            "description": "Email or phone number"
           },
           "password": {
             "type": "string",
@@ -1548,7 +1786,7 @@
         },
         "type": "object",
         "required": [
-          "phone_number",
+          "identifier",
           "password"
         ],
         "title": "LoginRequest",
@@ -1734,8 +1972,28 @@
         "title": "QuestionOptionDTO",
         "description": "DTO for question option representation."
       },
+      "RefreshTokenRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "description": "Token refresh request payload."
+      },
       "RegisterRequest": {
         "properties": {
+          "full_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Full Name"
+          },
           "phone_number": {
             "type": "string",
             "maxLength": 20,
@@ -1745,6 +2003,18 @@
             "examples": [
               "+233241234567"
             ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           },
           "password": {
             "type": "string",
@@ -1761,63 +2031,12 @@
         },
         "type": "object",
         "required": [
+          "full_name",
           "phone_number",
           "password"
         ],
         "title": "RegisterRequest",
         "description": "User registration request payload."
-      },
-      "RuleTreeResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "version": {
-            "type": "string",
-            "title": "Version"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "tree_structure": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Tree Structure"
-          },
-          "is_active": {
-            "type": "boolean",
-            "title": "Is Active"
-          },
-          "published_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Published At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "version",
-          "description",
-          "tree_structure",
-          "is_active",
-          "published_at"
-        ],
-        "title": "RuleTreeResponse",
-        "description": "Clinical rule tree response (full tree structure)."
-      },
-      "SessionStatus": {
-        "type": "string",
-        "enum": [
-          "IN_PROGRESS",
-          "COMPLETED",
-          "ABANDONED",
-          "SYNCED"
-        ],
-        "title": "SessionStatus",
-        "description": "Lifecycle status of an assessment session."
       },
       "SyncedIdPair": {
         "properties": {
@@ -1844,6 +2063,10 @@
             "type": "string",
             "title": "Access Token"
           },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token"
+          },
           "token_type": {
             "type": "string",
             "title": "Token Type",
@@ -1852,206 +2075,20 @@
           "expires_in_minutes": {
             "type": "integer",
             "title": "Expires In Minutes"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
           }
         },
         "type": "object",
         "required": [
           "access_token",
-          "expires_in_minutes"
+          "refresh_token",
+          "expires_in_minutes",
+          "user"
         ],
         "title": "TokenResponse",
         "description": "JWT access token response payload."
-      },
-      "TriageEvaluateRequest": {
-        "properties": {
-          "primary_symptom": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 2,
-            "title": "Primary Symptom",
-            "description": "Primary presenting symptom keyword.",
-            "examples": [
-              "fever",
-              "chest_pain",
-              "severe_bleeding"
-            ]
-          },
-          "language_code": {
-            "type": "string",
-            "pattern": "^(en|tw)$",
-            "title": "Language Code",
-            "default": "en"
-          },
-          "patient_age": {
-            "type": "integer",
-            "maximum": 120.0,
-            "minimum": 0.0,
-            "title": "Patient Age",
-            "description": "Patient age in years."
-          },
-          "patient_sex": {
-            "type": "string",
-            "pattern": "^(MALE|FEMALE|OTHER)$",
-            "title": "Patient Sex"
-          },
-          "answers": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Answers",
-            "description": "Node ID to selected answer mapping from decision tree traversal."
-          },
-          "created_offline": {
-            "type": "boolean",
-            "title": "Created Offline",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "primary_symptom",
-          "patient_age",
-          "patient_sex"
-        ],
-        "title": "TriageEvaluateRequest",
-        "description": "Triage symptom evaluation request payload."
-      },
-      "TriageEvaluateResponse": {
-        "properties": {
-          "session_id": {
-            "type": "string",
-            "title": "Session Id"
-          },
-          "urgency_level": {
-            "$ref": "#/components/schemas/UrgencyLevel"
-          },
-          "urgency_display": {
-            "type": "string",
-            "title": "Urgency Display"
-          },
-          "primary_action": {
-            "$ref": "#/components/schemas/LocalizedText"
-          },
-          "timeframe_hours": {
-            "type": "integer",
-            "title": "Timeframe Hours"
-          },
-          "first_aid_protocol_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "First Aid Protocol Id"
-          },
-          "evaluated_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Evaluated At"
-          },
-          "rule_tree_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Rule Tree Version"
-          }
-        },
-        "type": "object",
-        "required": [
-          "session_id",
-          "urgency_level",
-          "urgency_display",
-          "primary_action",
-          "timeframe_hours",
-          "evaluated_at"
-        ],
-        "title": "TriageEvaluateResponse",
-        "description": "Triage evaluation response payload."
-      },
-      "TriageHistoryResponse": {
-        "properties": {
-          "sessions": {
-            "items": {
-              "$ref": "#/components/schemas/TriageSessionSummary"
-            },
-            "type": "array",
-            "title": "Sessions"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "limit": {
-            "type": "integer",
-            "title": "Limit"
-          },
-          "offset": {
-            "type": "integer",
-            "title": "Offset"
-          }
-        },
-        "type": "object",
-        "required": [
-          "sessions",
-          "total",
-          "limit",
-          "offset"
-        ],
-        "title": "TriageHistoryResponse",
-        "description": "Paginated triage history list response."
-      },
-      "TriageSessionSummary": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "urgency_level": {
-            "type": "string",
-            "title": "Urgency Level"
-          },
-          "primary_symptom": {
-            "type": "string",
-            "title": "Primary Symptom"
-          },
-          "language_code": {
-            "type": "string",
-            "title": "Language Code"
-          },
-          "created_offline": {
-            "type": "boolean",
-            "title": "Created Offline"
-          },
-          "conducted_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Conducted At"
-          },
-          "synced_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Synced At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "urgency_level",
-          "primary_symptom",
-          "language_code",
-          "created_offline",
-          "conducted_at",
-          "synced_at"
-        ],
-        "title": "TriageSessionSummary",
-        "description": "Lightweight triage session summary for history list views."
       },
       "UrgencyCode": {
         "type": "string",
@@ -2064,16 +2101,56 @@
         "title": "UrgencyCode",
         "description": "The four canonical clinical urgency codes.\n\nThese must mirror app/domain/value_objects/urgency_level.py exactly."
       },
-      "UrgencyLevel": {
-        "type": "string",
-        "enum": [
-          "RED",
-          "ORANGE",
-          "YELLOW",
-          "GREEN"
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "phone_number": {
+            "type": "string",
+            "title": "Phone Number"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "preferred_language_code": {
+            "type": "string",
+            "title": "Preferred Language Code"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "profile_completed": {
+            "type": "boolean",
+            "title": "Profile Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "phone_number",
+          "email",
+          "preferred_language_code",
+          "is_active",
+          "profile_completed"
         ],
-        "title": "UrgencyLevel",
-        "description": "Four-tier clinical urgency classification.\n\n- RED: Life-threatening emergency. Immediate intervention required.\n- ORANGE: Very urgent. Hospital evaluation within 60 minutes.\n- YELLOW: Urgent. Clinic visit within 24 hours.\n- GREEN: Non-urgent. Self-care guidance; routine appointment."
+        "title": "UserResponse",
+        "description": "Authenticated user public representation."
       },
       "ValidationError": {
         "properties": {

@@ -1,0 +1,98 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "history": "History",
+    "emergency": "Emergency",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "landing": {
+    "title": "Your Personal Health Companion",
+    "subtitle": "Get instant, reliable triage guidance tailored to your symptoms. Available anywhere, anytime.",
+    "start_triage": "Start Triage Now",
+    "login": "Sign In",
+    "register": "Create Account",
+    "offline_ready": "Works Offline",
+    "offline_desc": "Get critical health guidance even without internet access.",
+    "voice_first": "Voice First",
+    "voice_desc": "Hands-free symptom reporting using natural speech.",
+    "privacy_focused": "Privacy Focused",
+    "privacy_desc": "Your health data never leaves your device without permission."
+  },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "start_new": "Start New Assessment",
+    "start_text": "Text Assessment",
+    "start_voice": "Voice Assessment",
+    "recent_activity": "Recent Activity",
+    "view_all": "View all history"
+  },
+  "assessment": {
+    "type_symptom": "Type your main symptom...",
+    "continue": "Continue",
+    "finishing": "Generating assessment...",
+    "offline_warning": "You are offline. Saving to outbox.",
+    "emergency_warning": "This sounds like a medical emergency.",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "voice": {
+    "listening": "I'm listening...",
+    "thinking": "Thinking...",
+    "read_aloud": "Read Aloud",
+    "tap_to_speak": "Tap to Speak",
+    "pause": "Pause",
+    "cancel": "Cancel",
+    "speak_slower": "Speak Slower"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "App Language",
+    "language_desc": "Choose your preferred language",
+    "voice_section": "Voice Consultation",
+    "assistant_voice": "Assistant Voice",
+    "speech_rate": "Speech Rate",
+    "pitch": "Pitch",
+    "volume": "Volume",
+    "auto_read": "Auto Read Responses",
+    "hands_free": "Hands-Free Mode",
+    "test_voice": "Test Voice",
+    "play": "Play",
+    "offline_section": "Offline Storage",
+    "offline_mode": "Offline Mode",
+    "clear_data": "Clear Offline Data"
+  },
+  "emergency": {
+    "title": "Emergency Numbers",
+    "national_emergency": "National Emergency",
+    "ambulance": "Ambulance Services",
+    "police": "Police",
+    "fire": "Fire Service",
+    "call": "Call"
+  },
+  "results": {
+    "title": "Assessment Results",
+    "severity": "Severity Level",
+    "recommendations": "Recommendations",
+    "explanation": "Explanation",
+    "return_home": "Return Home"
+  },
+  "history": {
+    "title": "Assessment History",
+    "no_history": "No history available",
+    "conducted_on": "Conducted on"
+  },
+  "auth": {
+    "login_title": "Welcome Back",
+    "email": "Email Address",
+    "password": "Password",
+    "sign_in": "Sign In",
+    "no_account": "Don't have an account?",
+    "register_here": "Register here",
+    "register_title": "Create an Account",
+    "full_name": "Full Name",
+    "create_account": "Create Account",
+    "has_account": "Already have an account?",
+    "login_here": "Sign in here"
+  }
+}

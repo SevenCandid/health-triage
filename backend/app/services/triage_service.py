@@ -328,12 +328,16 @@ class TriageService:
                     concern_ids.add(r.health_concern_id)
 
         if concern_ids:
-            rec_query = select(RecommendationModel).where(
+            rec_query = select(RecommendationModel).options(
+                selectinload(RecommendationModel.translations)
+            ).where(
                 RecommendationModel.health_concern_id.in_(concern_ids),
                 RecommendationModel.is_active == True,
             )
         else:
-            rec_query = select(RecommendationModel).where(
+            rec_query = select(RecommendationModel).options(
+                selectinload(RecommendationModel.translations)
+            ).where(
                 RecommendationModel.is_active == True,
             ).limit(20)
         

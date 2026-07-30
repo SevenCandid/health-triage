@@ -174,7 +174,9 @@ class RuleEngine:
         # 3. Recommendations
         for concern_id in concern_ids:
             recs = self.recommendation_engine.get_recommendations_for_concern(
-                all_recommendations, concern_id
+                all_recommendations, 
+                concern_id,
+                language_code=conversation.language_code
             )
             all_recs.extend(recs)
         

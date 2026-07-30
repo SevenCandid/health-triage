@@ -1,0 +1,98 @@
+{
+  "nav": {
+    "dashboard": "Krataafa Titiriw",
+    "history": "Abakɔsɛm",
+    "emergency": "Ateetee Berɛ",
+    "settings": "Nsesaeɛ",
+    "logout": "Firi mu"
+  },
+  "landing": {
+    "title": "Wo Akwahosan Boafoɔ",
+    "subtitle": "Nya akwankyerɛ ntem ara fa wo yadeɛ ho. Wɔ hɔ baabiara, berɛ biara.",
+    "start_triage": "Hyɛ Aweɛnɛ Ase",
+    "login": "Kɔ mu",
+    "register": "Bue Akonta",
+    "offline_ready": "Yɛ adwuma mpo sɛ internet nni hɔ",
+    "offline_desc": "Nya akwankyerɛ mpo sɛ internet nni hɔ.",
+    "voice_first": "Nne Nkoaa",
+    "voice_desc": "Ka wo yadeɛ ho asɛm denam nne so.",
+    "privacy_focused": "Kokam",
+    "privacy_desc": "Wo ho nsɛm nkɔ baabiara kyesɛ wo pɛ."
+  },
+  "dashboard": {
+    "welcome": "Akwaaba bio",
+    "start_new": "Hyɛ Foforɔ Ase",
+    "start_text": "Twerɛ",
+    "start_voice": "Ka kyerɛ me",
+    "recent_activity": "Nneɛma a yɛyɛɛ nkyɛɛeɛ",
+    "view_all": "Hwɛ abakɔsɛm nyinaa"
+  },
+  "assessment": {
+    "type_symptom": "Twerɛ wo yadeɛ ankasa...",
+    "continue": "Toa so",
+    "finishing": "Reyɛ nsonsoeeɛ...",
+    "offline_warning": "Internet nni hɔ. Yɛde rekora.",
+    "emergency_warning": "Yei te sɛ ateetee berɛ.",
+    "yes": "Aane",
+    "no": "Daabi"
+  },
+  "voice": {
+    "listening": "Meretie wo...",
+    "thinking": "Meredwene ho...",
+    "read_aloud": "Kenkan den",
+    "tap_to_speak": "Mia na Kasa",
+    "pause": "Gyae",
+    "cancel": "Twam",
+    "speak_slower": "Kasa brɛoo"
+  },
+  "settings": {
+    "title": "Nsesaeɛ",
+    "language": "Kasa",
+    "language_desc": "Yi kasa a wopɛ",
+    "voice_section": "Nne Nkitahodie",
+    "assistant_voice": "Boafoɔ Nne",
+    "speech_rate": "Kasa ntem",
+    "pitch": "Nne tenten",
+    "volume": "Nne kɛseɛ",
+    "auto_read": "Kenkan nnyesoɔ",
+    "hands_free": "Kasa a wommia hwee",
+    "test_voice": "Sɔ nne hwɛ",
+    "play": "Bɔ",
+    "offline_section": "Kora no Offline",
+    "offline_mode": "Offline Nhyehyɛeɛ",
+    "clear_data": "Pepa Offline Nneɛma"
+  },
+  "emergency": {
+    "title": "Ateetee Nɔmba",
+    "national_emergency": "Ɔman Ateetee",
+    "ambulance": "Ambulance Dwumadie",
+    "police": "Polisini",
+    "fire": "Gya Dwumadie",
+    "call": "Frɛ"
+  },
+  "results": {
+    "title": "Nsonsoeeɛ Nsunsuansoɔ",
+    "severity": "Emu yɛ duru sɛn",
+    "recommendations": "Afotuo",
+    "explanation": "Nkyerɛmu",
+    "return_home": "San kɔ fie"
+  },
+  "history": {
+    "title": "Abakɔsɛm",
+    "no_history": "Abakɔsɛm nni hɔ",
+    "conducted_on": "Yɛyɛɛ no"
+  },
+  "auth": {
+    "login_title": "Akwaaba Bio",
+    "email": "Email Adrɛse",
+    "password": "Password",
+    "sign_in": "Kɔ mu",
+    "no_account": "Wonni akonta?",
+    "register_here": "Bue akonta wɔ ha",
+    "register_title": "Bue Akonta",
+    "full_name": "Wo Din Nyinaa",
+    "create_account": "Bue Akonta",
+    "has_account": "Wowɔ akonta dada?",
+    "login_here": "Kɔ mu wɔ ha"
+  }
+}

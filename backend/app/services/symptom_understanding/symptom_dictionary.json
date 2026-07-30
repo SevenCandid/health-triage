@@ -8,7 +8,10 @@
     "heavy head",
     "throbbing head",
     "pain in my head",
-    "headache"
+    "headache",
+    "me ti yɛ me yaw",
+    "me ti reye me",
+    "me ho yɛ me ti"
   ],
   "fever": [
     "feeling hot",
@@ -19,7 +22,11 @@
     "body is hot",
     "high temperature",
     "running a fever",
-    "fever"
+    "fever",
+    "me ho yɛ hye",
+    "awɔ de me",
+    "me hohom te hye",
+    "atiridii"
   ],
   "cough": [
     "can't stop coughing",
@@ -29,7 +36,10 @@
     "coughing up phlegm",
     "coughing all night",
     "have a cough",
-    "coughing"
+    "coughing",
+    "me bɔ ɛwa",
+    "ɛwa",
+    "me tiri mu yɛ me ɛwa"
   ],
   "chest-pain": [
     "chest feels tight",
@@ -39,7 +49,9 @@
     "sore chest",
     "chest pain",
     "tightness",
-    "heavy chest"
+    "heavy chest",
+    "me bo yɛ me yaw",
+    "me koko yɛ me yaw"
   ],
   "shortness-of-breath": [
     "can't breathe well",
@@ -50,7 +62,10 @@
     "breathless",
     "difficulty breathing",
     "choking feel",
-    "gasping for air"
+    "gasping for air",
+    "ahomeka",
+    "me home teatwe",
+    "mintumi nhome yie"
   ],
   "abdominal-pain": [
     "stomach hurts",
@@ -62,7 +77,10 @@
     "my tummy hurts",
     "pain in my belly",
     "stomach cramping",
-    "stomach cramps"
+    "stomach cramps",
+    "me yafunu yɛ me yaw",
+    "me yam keka me",
+    "me yafunu mu keka me"
   ],
   "nausea-vomiting": [
     "throwing up",
@@ -73,7 +91,10 @@
     "nausea",
     "sick to my stomach",
     "want to throw up",
-    "puking"
+    "puking",
+    "me fe",
+    "me pɛ sɛ me fe",
+    "afe"
   ],
   "diarrhea": [
     "running stomach",
@@ -82,7 +103,10 @@
     "diarrhea",
     "loose motion",
     "watery stool",
-    "running bowel"
+    "running bowel",
+    "ayamtuo",
+    "me kɔ ayaresabea ntɛmntɛm",
+    "me yam tu me"
   ],
   "sore-throat": [
     "throat hurts",
@@ -90,7 +114,9 @@
     "painful swallowing",
     "sore throat",
     "scratchy throat",
-    "throat feels raw"
+    "throat feels raw",
+    "me mene mu yɛ me yaw",
+    "me mene yɛ me yaw"
   ],
   "dizziness": [
     "feeling dizzy",
@@ -99,7 +125,10 @@
     "giddiness",
     "lightheaded",
     "head is spinning",
-    "want to faint"
+    "want to faint",
+    "anisuoyaa",
+    "me tiri mu kyini me",
+    "me ani so yɛ me wisiwisi"
   ],
   "rash": [
     "skin rash",
@@ -107,14 +136,19 @@
     "spots on my skin",
     "rash",
     "breaking out",
-    "skin irritation"
+    "skin irritation",
+    "nsa",
+    "me honam ani nsa",
+    "honam nsa"
   ],
   "back-pain": [
     "back hurts",
     "back pain",
     "pain in my back",
     "lower back ache",
-    "backache"
+    "backache",
+    "me kyea mu yɛ me yaw",
+    "me akyi yɛ me yaw"
   ],
   "fatigue": [
     "feeling weak",
@@ -123,6 +157,9 @@
     "fatigue",
     "extremely tired",
     "body weakness",
-    "worn out"
+    "worn out",
+    "me brɛ",
+    "mabrɛ dodo",
+    "ahoɔden nni me ho"
   ]
 }
