@@ -398,6 +398,27 @@ class TriageService:
             all_recommendations=all_recommendations
         )
 
+        if not eval_result.next_question and self.gemini_service and self.gemini_service.is_available:
+            dynamic_keys = [k for k in (conv.raw_answers_snapshot or {}).keys() if k.startswith("dynamic_ai_")]
+            if len(dynamic_keys) < 2:
+                transcript = await self.get_conversation_transcript(conversation_id)
+                context_str = ""
+                for msg in transcript:
+                    role = "Assistant" if msg["role"] == "SYSTEM" else "User"
+                    context_str += f"{role}: {msg['content']}\n"
+                
+                ai_question = self.gemini_service.generate_dynamic_question(context_str, conv.language_code)
+                if ai_question:
+                    next_idx = len(dynamic_keys) + 1
+                    eval_result.next_question = {
+                        "id": str(uuid.uuid4()),
+                        "node_id": f"dynamic_ai_{next_idx}",
+                        "question_text_en": ai_question,
+                        "question_text_tw": ai_question,
+                        "question_type": "FREE_TEXT",
+                        "options": []
+                    }
+
         # Update session status if complete or emergency
         if not eval_result.next_question:
             conv.status = ConversationStatus.COMPLETED

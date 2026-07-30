@@ -122,6 +122,32 @@ class GeminiService:
                     logger.error(f"Fallback to gemini-flash-latest also failed: {fallback_e}")
             return question_en
 
+    def generate_dynamic_question(self, conversation_context: str, language_code: str) -> Optional[str]:
+        """Generates a dynamic follow-up question based on the conversation history."""
+        if not self.is_available:
+            return None
+            
+        lang = "English" if language_code == "en" else "Akan/Twi (Ghana)"
+        prompt = (
+            f"You are FirstAid+, a medical triage assistant. The user is experiencing symptoms but our rule engine has run out of predefined questions. "
+            f"Based on the following conversation history, generate ONE relevant, empathetic follow-up question to gather more information about their condition. "
+            f"The question must be in {lang}. Do NOT give any medical advice or diagnosis. Just ask one single, concise question.\n\n"
+            f"Conversation History:\n{conversation_context}"
+        )
+        
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+        
+        try:
+            response = self.client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.3)
+            )
+            return response.text.strip()
+        except Exception as e:
+            logger.warning(f"Gemini generate_dynamic_question error: {e}")
+            return None
+
     def generate_explanation(self, conversation_context: str, recommendation_summary: str, is_emergency: bool, language_code: str, profile_context: str | None = None) -> str:
         """Generates a natural, reassuring explanation of the assessment results."""
         if not self.is_available:
