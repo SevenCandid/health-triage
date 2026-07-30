@@ -373,35 +373,6 @@ export default function VoicePage() {
     }
   })
   
-  // 4. Get Assessment Result Mutation
-  const resultMutation = useMutation({
-      mutationFn: (sid: string) => assessmentApi.getResult(sid),
-      onSuccess: (res) => {
-         const result = res.data
-         let resultText = appLanguage === 'tw' 
-            ? `Nhwehwɛmu no aba. ${result.explanation}. `
-            : `Assessment Summary. ${result.explanation}. `
-         if (result.recommendations && result.recommendations.length > 0) {
-             const recs = result.recommendations.join(', ')
-             resultText += appLanguage === 'tw'
-                 ? `Akwankyerɛ: ${recs}. `
-                 : `Recommended next steps: ${recs}. `
-         }
-         resultText += appLanguage === 'tw'
-            ? "Biribi foforo wɔ hɔ a wopɛ sɛ yɛka ho asɛm nnɛ?"
-            : "Is there anything else you'd like to discuss today?"
-         
-         speakText(resultText, () => startListening())
-      },
-      onError: () => {
-          speakText(
-            appLanguage === 'tw'
-              ? "Kafra, mfomso bi aba. Bubu kɔ nsunsuanso kratafa no so."
-              : "I'm sorry, I encountered an error while generating your assessment. Please open the results page manually.", 
-            () => navigate(`/assessment/${sessionId}/result`)
-          )
-      }
-  })
 
   const handleCompletion = () => {
     completeSession()
