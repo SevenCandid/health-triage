@@ -629,7 +629,7 @@ export default function VoicePage() {
       </div>
 
       {/* Controls */}
-      <div className="flex gap-2 sm:gap-4 flex-shrink-0 mt-auto w-full justify-center pb-20 sm:pb-24">
+      <div className="flex gap-2 sm:gap-4 flex-shrink-0 mt-auto w-full justify-center pb-28 sm:pb-32">
         {voiceState === 'IDLE' ? (
           <Button className="rounded-full h-9 sm:h-12 px-4 sm:px-6 text-xs sm:text-base whitespace-nowrap shadow-sm" onClick={startListening}>
             Tap to Speak

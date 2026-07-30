@@ -1,5 +1,5 @@
 import React from 'react'
-import { Bed, Microscope, Zap, Circle, Droplets, Hospital, Smartphone, BarChart2, Utensils, AlertTriangle, MessageSquare, Siren, Sparkles, Phone } from 'lucide-react'
+import { Bed, Microscope, Zap, Circle, Droplets, Hospital, Smartphone, BarChart2, Utensils, AlertTriangle, MessageSquare, Siren, Sparkles, Phone, Plus } from 'lucide-react'
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -452,7 +452,7 @@ export default function AssessmentResultPage() {
               </motion.button>
             )}
 
-            {doctorContact && (
+            {doctorContact ? (
               <a
                 href={`tel:${doctorContact.phone_number}`}
                 className={`w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm ${
@@ -463,9 +463,18 @@ export default function AssessmentResultPage() {
               >
                 <span><Phone className="w-4 h-4" /></span> Call My Doctor ({doctorContact.contact_name})
               </a>
+            ) : (
+              userRole !== 'GUEST' && (
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm border border-dashed border-primary/50 text-primary hover:bg-primary/5 bg-background"
+                >
+                  <Plus className="w-4 h-4" /> Add Doctor Contact
+                </button>
+              )
             )}
 
-            {emergencyContact && (
+            {emergencyContact ? (
               <a
                 href={`tel:${emergencyContact.phone_number}`}
                 className={`w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm border ${
@@ -476,6 +485,15 @@ export default function AssessmentResultPage() {
               >
                 <span><Phone className="w-4 h-4" /></span> Call Emergency Contact ({emergencyContact.contact_name})
               </a>
+            ) : (
+              userRole !== 'GUEST' && (
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm border border-dashed border-red-500/50 text-red-600 hover:bg-red-50 bg-background"
+                >
+                  <Plus className="w-4 h-4" /> Add Emergency Contact
+                </button>
+              )
             )}
 
             <button
