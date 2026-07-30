@@ -403,7 +403,7 @@ class TriageService:
             if len(dynamic_keys) < 2:
                 transcript = await self.get_conversation_transcript(conversation_id)
                 context_str = ""
-                for msg in transcript:
+                for msg in transcript.get("messages", []):
                     role = "Assistant" if msg["role"] == "SYSTEM" else "User"
                     context_str += f"{role}: {msg['content']}\n"
                 
