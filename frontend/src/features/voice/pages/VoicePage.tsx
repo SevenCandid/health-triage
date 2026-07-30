@@ -50,6 +50,7 @@ export default function VoicePage() {
   // Refs to manage native API instances
   const recognitionRef = useRef<any>(null)
   const isComponentMounted = useRef(true)
+  const handleUserUtteranceRef = useRef<(text: string) => void>(() => {})
 
   // Initialize Speech Recognition
   useEffect(() => {
@@ -83,7 +84,7 @@ export default function VoicePage() {
         setTranscriptText(finalTranscript || interimTranscript)
         
         if (finalTranscript) {
-          handleUserUtterance(finalTranscript)
+          handleUserUtteranceRef.current(finalTranscript)
         }
       }
 
@@ -577,6 +578,8 @@ export default function VoicePage() {
     resetSession()
     navigate('/dashboard')
   }
+
+  handleUserUtteranceRef.current = handleUserUtterance
 
   return (
     <div className="fixed inset-0 flex flex-col bg-background overflow-hidden" style={{ top: '3.5rem', bottom: '0' }}>
