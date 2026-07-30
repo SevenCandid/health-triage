@@ -1,10 +1,10 @@
 import React from 'react'
-import { Bed, Microscope, Zap, Circle, Droplets, Hospital, Smartphone, BarChart2, Utensils, AlertTriangle, MessageSquare, Siren, Sparkles } from 'lucide-react'
+import { Bed, Microscope, Zap, Circle, Droplets, Hospital, Smartphone, BarChart2, Utensils, AlertTriangle, MessageSquare, Siren, Sparkles, Phone } from 'lucide-react'
 import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { assessmentApi } from '@/services/api'
+import { assessmentApi, authApi } from '@/services/api'
 import { useAssessmentStore } from '@/stores/assessment-store'
 import { useNetworkStore } from '@/stores/network-store'
 import { PageLoader } from '@/components/common/LoadingSpinner'
@@ -161,6 +161,12 @@ export default function AssessmentResultPage() {
     if (data?.data) useAssessmentStore.getState().setResult(data.data)
   }, [data])
 
+  const { data: contactsData } = useQuery({
+    queryKey: ['emergencyContacts'],
+    queryFn: () => authApi.getEmergencyContacts(),
+    enabled: userRole !== 'GUEST',
+  })
+
   if (isLoading) return <PageLoader />
 
   if (isError || !data) {
@@ -181,6 +187,10 @@ export default function AssessmentResultPage() {
   const severity = result.severity ?? 'GREEN'
   const cfg = RISK[severity] ?? RISK['GREEN']
   const isEmergency = result.is_emergency || severity === 'RED' || severity === 'EMERGENCY'
+
+  const contacts = contactsData?.data || []
+  const doctorContact = contacts.find((c: any) => c.relationship_type === 'HEALTHCARE_PROVIDER')
+  const emergencyContact = contacts.find((c: any) => c.is_primary && c.relationship_type !== 'HEALTHCARE_PROVIDER') || contacts.find((c: any) => c.relationship_type !== 'HEALTHCARE_PROVIDER')
 
   const symptomName = currentSymptoms[0] || 'General Health Concern'
   const symptomSlug = (result.symptom_name || symptomName).toLowerCase().replace(/\s+/g, '-')
@@ -247,6 +257,12 @@ export default function AssessmentResultPage() {
             </p>
             <h1 className="text-2xl font-extrabold tracking-tight">{cfg.label}</h1>
             <p className="text-sm opacity-85 mt-1 font-medium">{cfg.sublabel}</p>
+
+            {isEmergency && doctorContact && (
+              <a href={`tel:${doctorContact.phone_number}`} className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur text-white text-xs font-bold transition-colors">
+                <Phone className="w-3.5 h-3.5" /> Call my doctor
+              </a>
+            )}
 
             {result.conducted_at && (
               <p className="text-[11px] opacity-60 mt-3">
@@ -434,6 +450,32 @@ export default function AssessmentResultPage() {
               >
                 <span><Siren className="w-4 h-4" /></span> Call Emergency Services
               </motion.button>
+            )}
+
+            {doctorContact && (
+              <a
+                href={`tel:${doctorContact.phone_number}`}
+                className={`w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm ${
+                  isEmergency
+                    ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-500/20'
+                    : 'bg-primary hover:bg-primary/90 text-white'
+                }`}
+              >
+                <span><Phone className="w-4 h-4" /></span> Call My Doctor ({doctorContact.contact_name})
+              </a>
+            )}
+
+            {emergencyContact && (
+              <a
+                href={`tel:${emergencyContact.phone_number}`}
+                className={`w-full flex items-center justify-center gap-2 font-bold text-xs rounded-xl py-2.5 mt-2 transition-all shadow-sm border ${
+                  isEmergency
+                    ? 'border-red-500 text-red-600 hover:bg-red-50'
+                    : 'border-border bg-background hover:bg-accent text-foreground'
+                }`}
+              >
+                <span><Phone className="w-4 h-4" /></span> Call Emergency Contact ({emergencyContact.contact_name})
+              </a>
             )}
 
             <button
