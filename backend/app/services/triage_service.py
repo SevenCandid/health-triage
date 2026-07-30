@@ -217,7 +217,7 @@ class TriageService:
         if eval_result.next_question is None and self.gemini_service:
             if not conv.ai_explanation:
                 # Need to generate and save it
-                transcript = f"Symptoms evaluated: {', '.join([cs.symptom.name for cs in conv.symptoms])}"
+                transcript = f"Symptoms evaluated: {', '.join([cs.symptom.name_en for cs in conv.symptoms])}"
                 # Add a brief representation of answers
                 answers_text = []
                 for k, v in (conv.raw_answers_snapshot or {}).items():
