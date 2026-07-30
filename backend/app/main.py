@@ -137,6 +137,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                             END IF;
                         END $$;
                     '''))
+                    # Add ai_explanation column if it doesn't exist
+                    await conn.execute(text('''
+                        DO $$
+                        BEGIN
+                            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='health_conversations' AND column_name='ai_explanation') THEN
+                                ALTER TABLE health_conversations ADD COLUMN ai_explanation TEXT;
+                            END IF;
+                        END $$;
+                    '''))
                 logger.info("Emergency fallback schema patch applied successfully.")
             except Exception as e:
                 logger.error(f"Emergency fallback failed: {e}")
